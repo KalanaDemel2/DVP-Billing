@@ -10,7 +10,7 @@ var validator = require('validator');
 var port = config.Host.port || 3000;
 var host = config.Host.vdomain || 'localhost';
 
-var newPackage = require("./billapi/functions/newpackge");
+var buyPackage = require("./billapi/functions/buypackage");
 var billing = require("./Core/scheduler");
 
 
@@ -37,7 +37,7 @@ var token = format("Bearer {0}",config.Services.accessToken);
 
 
 
-server.post('/DVP/API/:version/Billing/BuyPackage',authorization({resource:"billing", action:"write"}), newPackage.execute);
+server.post('/DVP/API/:version/Billing/BuyPackage',authorization({resource:"billing", action:"write"}), buyPackage.execute);
 
 
 
