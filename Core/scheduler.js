@@ -30,7 +30,7 @@ function billing(){
      */
 
     //var billing = schedule.scheduleJob('1 0 1 1-12 *', function(){
-    var billing = schedule.scheduleJob('30 1 16 24 11 *', function(){
+    var billing = schedule.scheduleJob('0 39 14 25 11 *', function(){
         console.log('billing is running...');
         bill(1);
     });
@@ -130,8 +130,8 @@ function billEach(datax){
 
                     var usertURL = format("http://{0}/DVP/API/{1}/Organisation/billingInformation", config.Services.userServiceHost, config.Services.userServiceVersion);
                     if (validator.isIP(config.Services.userServiceHost)) {
-                        //usertURL = format("http://{0}:{1}/DVP/API/{2}/Organisation/billingInformation", config.Services.userServiceHost, config.Services.userServicePort, config.Services.userServiceVersion);
-                        usertURL = format("http://192.168.5.175:{1}/DVP/API/{2}/Organisation/billingInformation", config.Services.userServiceHost, config.Services.userServicePort, config.Services.userServiceVersion);
+                        usertURL = format("http://{0}:{1}/DVP/API/{2}/Organisation/billingInformation", config.Services.userServiceHost, config.Services.userServicePort, config.Services.userServiceVersion);
+                        //usertURL = format("http://192.168.5.175:{1}/DVP/API/{2}/Organisation/billingInformation", config.Services.userServiceHost, config.Services.userServicePort, config.Services.userServiceVersion);
                     }
                     request({
                         method: "GET",
@@ -143,13 +143,13 @@ function billEach(datax){
                         json: {}
                     }, function (_error, _response, datax) {
                         //console.log(datax.IsSuccess);
-                        if(datax.IsSuccess && (datax.Result).length != 0){
+                        if(datax && (datax.Result).length != 0){
                             var user_packages = datax.Result;
 
                             var amount = 0;
                             for (var individualAmount in user_packages) {
                                 if (!user_packages[individualAmount].isTrial) {
-                                    amount = amount + user_packages[individualAmount].unitPrice;
+                                    amount = amount + (user_packages[individualAmount].unitPrice * user_packages[individualAmount].units);
                                 }
                                 if (individualAmount == user_packages.length - 1) {
                                     //console.log(userid+' '+amount);
@@ -157,8 +157,12 @@ function billEach(datax){
                                 }
                             }
                         }
-                        else{
+                        else if(datax){
                             callback(null, userid, 0, datax.Result, email);
+                            console.log('No Packages available')
+                        }
+                        else{
+                            callback(null, userid, 0, [], email);
                             console.log('Package Service issue')
                         }
 
@@ -191,17 +195,17 @@ function billEach(datax){
 
                     }
 
-                    console.log(formattedPackgeDetatils);
+                    //console.log(formattedPackgeDetatils);
                     // call wallet deduction with amount
                     var walletURL = format("http://{0}/DVP/API/{1}/PaymentManager/Customer/Wallet/Credit", config.Services.walletServiceHost, config.Services.walletServiceVersion);
 
 
                     if (validator.isIP(config.Services.walletServiceHost)) {
-                        wallerURL = format("http://{0}:{1}/DVP/API/{2}/PaymentManager/Customer/Wallet/Credit", config.Services.walletServiceHost, config.Services.walletServicePort, config.Services.walletServiceVersion);
+                        walletURL = format("http://{0}:{1}/DVP/API/{2}/PaymentManager/Customer/Wallet/Credit", config.Services.walletServiceHost, config.Services.walletServicePort, config.Services.walletServiceVersion);
                         //walletURL = format("http://{0}:{1}/DVP/API/{2}/PaymentManager/Customer/Wallet/Credit", 'localhost', "3333", config.Services.walletServiceVersion);
 
                     }
-                    //walletURL = format("http://{0}:{1}/DVP/API/{2}/PaymentManager/Customer/Wallet/Credit", 'localhost', "3333", config.Services.walletServiceVersion);
+                    //walletURL = format("http://{0}:{1}/DVP/API/{2}/PaymentManager/Customer/Wallet/Credit", config.Services.walletServiceHost, config.Services.walletServicePort, config.Services.walletServiceVersion);
 
 
                     request({
@@ -216,15 +220,20 @@ function billEach(datax){
                         //console.log(email);
                         if (datax && datax.IsSuccess) {
 
+                            console.log('Billing Successful');
 
-                            /*//Save to Database
+                            /*var date = new Date();
+                            var month  = date.getMonth();
+
+                            //Save to Database
                             var customer = {};
-                            customer.customer =
-                            customer.email =
-                            customer.subscriptions =
-                            customer.tenant =
-                            customer.company =
-                            customer.cycle =
+                            customer.customer = email;
+                            customer.email = email;
+                            customer.status = true;
+                            customer.subscriptions = formattedPackgeDetatils;
+                            customer.tenant = relTenant;
+                            customer.company = relCompany;
+                            customer.cycle = month;
 
                             DBconn.CreateCustomerBillRecord(customer, function(err,obj){
                                 if(err){
@@ -237,10 +246,8 @@ function billEach(datax){
                                     logger.info('SubscribeCustomerPlan - Subscribe To Plan - [%s] .', jsonString);
                                     res.end(jsonString);
                                 }
-                            });*/
-
-
-
+                            });
+*/
 
                             //Send Invoice
                             var sendObj = {
@@ -248,57 +255,48 @@ function billEach(datax){
                                 "tenant": 1
                             };
 
+                            var date = new Date();
+                            var month = date.getMonth();
 
-                            //sendObj.to =  email;
-                            sendObj.to =  "kalana@duosoftware.com";
-                            sendObj.from = "Billing";
-                            sendObj.template = "Billing Information";
-                            sendObj.Parameters =
-                            {
-                                username:"Kalana",totalbill:amount,
-                                company : email,
-                                owner : email,
-                                mail : email,
-                                billinginfo:formattedPackgeDetatils
-                            };
-                            //sendObj.attachments = [{name:name, url:url}]
+                            if(amount!=0){
+                                sendObj.to =  email;
+                                //sendObj.to =  "kalana@duosoftware.com";
+                                sendObj.from = "Billing";
+                                sendObj.template = "Billing Information";
+                                sendObj.Parameters =
+                                {
+                                    username:email,
+                                    totalbill:amount,
+                                    id:relTenant+"."+relCompany+"."+month,
+                                    created_at:date,
+                                    company : email,
+                                    owner : email,
+                                    mail : email,
+                                    billinginfo:formattedPackgeDetatils
+                                };
+                                //sendObj.attachments = [{name:name, url:url}]
 
-                            PublishToQueue("EMAILOUT", sendObj);
+                                PublishToQueue("EMAILOUT", sendObj);
 
+
+                            }
                             callback(null, datax);
 
                         }
                         else {
-
-                            //sendObj.to =  email;
-                            var sendObj = {
-                                "company": 0,
-                                "tenant": 1
-                            };
-                            sendObj.to =  "kalana@duosoftware.com";
-                            sendObj.from = "Billing";
-                            sendObj.template = "Billing Information";
-                            sendObj.Parameters =
-                            {
-                                username:"Kalana",totalbill:amount,
-                                company : email,
-                                owner : email,
-                                mail : email,
-                                billinginfo:formattedPackgeDetatils
-                            };
-                            //sendObj.attachments = [{name:name, url:url}]
-
-                            PublishToQueue("EMAILOUT", sendObj);
-
-
+                            console.log('Billing Unsuccessful, rescheduling billing');
                             var data= {};
                             data.count = 0;
                             data.company = relCompany;
                             data.tenant = relTenant;
                             data.amount = amount;
+                            data.email = email;
+                            data.formattedPackgeDetatils = formattedPackgeDetatils;
                             //console.log(data);
-                            //recurrenceSchedulePayment(data);
+                            recurrenceSchedulePayment(data);
                             callback(null, datax);
+
+
 
                         }
 
@@ -333,7 +331,7 @@ function recurrenceSchedulePayment(data){
     var amount = data.amount;
 
     var rule = new schedule.RecurrenceRule();
-    //rule.hour = 24;
+    //rule.hour = (config.Host.reschedulefreqency*24)/config.Host.rescheduletries;
     rule.second = 1;
     var count;
     if(data.hasOwnProperty('count')){
@@ -347,21 +345,19 @@ function recurrenceSchedulePayment(data){
     var task = schedule.scheduleJob(rule, function(){
 
 
-
-
-        console.log(count);
-        if(count<3){
+        //console.log(count);
+        if(count<config.Host.rescheduletries){
             //Call Wallet to retry
             // call wallet deduction with amount
             var walletURL = format("http://{0}/DVP/API/{1}/PaymentManager/Customer/Wallet/Credit", config.Services.walletServiceHost, config.Services.walletServiceVersion);
 
 
             if (validator.isIP(config.Services.walletServiceHost)) {
-                wallerURL = format("http://{0}:{1}/DVP/API/{2}/PaymentManager/Customer/Wallet/Credit", config.Services.walletServiceHost, config.Services.walletServicePort, config.Services.walletServiceVersion);
+                walletURL = format("http://{0}:{1}/DVP/API/{2}/PaymentManager/Customer/Wallet/Credit", config.Services.walletServiceHost, config.Services.walletServicePort, config.Services.walletServiceVersion);
                 //walletURL = format("http://{0}:{1}/DVP/API/{2}/PaymentManager/Customer/Wallet/Credit", 'localhost', "3333", config.Services.walletServiceVersion);
 
             }
-            //walletURL = format("http://{0}:{1}/DVP/API/{2}/PaymentManager/Customer/Wallet/Credit", 'localhost', "3333", config.Services.walletServiceVersion);
+            //walletURL = format("http://{0}:{1}/DVP/API/{2}/PaymentManager/Customer/Wallet/Credit", config.Services.walletServiceHost, config.Services.walletServicePort, config.Services.walletServiceVersion);
 
 
             request({
@@ -369,7 +365,7 @@ function recurrenceSchedulePayment(data){
                 url: walletURL,
                 headers: {
                     Authorization: token,
-                    companyinfo: format("{0}:{1}", "1", "103")
+                    companyinfo: format("{0}:{1}", relTenant, relCompany)
                 },
                 json: {"Amount":amount}
             }, function (_error, _response, datax) {
@@ -377,13 +373,43 @@ function recurrenceSchedulePayment(data){
                 if(datax.IsSuccess){
                     callback(null, datax);
                 }
-                else{
-                    console.log('Payment failed, rescheduling for '+relCompany+':'+relTenant+ ' attempt :'+ count);
+                else {
+                    console.log('Payment failed, rescheduling for ' + relCompany + ':' + relTenant + ' attempt :' + count);
                     //data.count=data.count+1;
                     count++;
-                    //remove
-                    //recurrenceSchedulePayment(data);
 
+                    //send warning
+
+                    //Send Invoice
+                    var sendObj = {
+                        "company": 0,
+                        "tenant": 1
+                    };
+
+                    var date = new Date();
+                    var month = date.getMonth();
+
+                    if (amount != 0) {
+                        sendObj.to = email;
+                        //sendObj.to =  "kalana@duosoftware.com";
+                        sendObj.from = "Billing";
+                        sendObj.template = "Billing Information";
+                        sendObj.Parameters =
+                        {
+                            username: data.email,
+                            totalbill: amount,
+                            id: relTenant + "." + relCompany + "." + month,
+                            created_at: date,
+                            company: data.email,
+                            owner: data.email,
+                            mail: data.email,
+                            billinginfo: data.formattedPackgeDetatils
+                        };
+                        //sendObj.attachments = [{name:name, url:url}]
+
+                        PublishToQueue("EMAILOUT", sendObj);
+
+                    }
                 }
 
 
@@ -415,32 +441,16 @@ function recurrenceSchedulePayment(data){
                 },
                 json: {"Amount":amount}
             }, function (_error, _response, datax) {
-                console.log(datax);
+                //console.log(datax);
                 if(datax && datax.IsSuccess){
 
                     console.log('Disabling account...');
+                    task.cancel();
 
-                    /*var removeClient;
-                    var removeIndex = -1;
-
-                    //Stop recurrence
-                    for (var index in recuringTaskQueue){
-                        if (recuringTaskQueue[index].task === task){
-                            removeIndex = index;
-                            break;
-                        }
-                    }
-
-                    if (removeIndex !=-1){
-                        removeClient = recuringTaskQueue[removeIndex];
-                        removeClient.task.cancel();
-                        recuringTaskQueue.splice(removeIndex,1);
-                    }*/
                 }
                 else{
                     //if Request fails, reschedule
                     //data.count=data.count+1;
-                    //recurrenceSchedulePayment(data);
 
                 }
 

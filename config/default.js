@@ -36,7 +36,9 @@ module.exports = {
         "vdomain": "localhost",
         "domain": "localhost",
         "port": "4444",
-        "version": "1.0"
+        "version": "1.0",
+        "reschedulefreqency": "1",
+        "rescheduletries": "3"
     },
 
     "LBServer" : {

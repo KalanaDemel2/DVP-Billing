@@ -32,17 +32,25 @@ function execute(req,res,next){
 
     if (validator.isIP(config.Services.walletServiceHost)) {
         //wallerURL = format("http://{0}:{1}/DVP/API/{2}/PaymentManager/Customer/"+userid+"/Wallet/Credit", config.Services.walletServiceHost, config.Services.walletServicePort, config.Services.walletServiceVersion);
-        walletURL = format("http://{0}:{1}/DVP/API/{2}/PaymentManager/Customer/Wallet/Credit", 'localhost', "3333", config.Services.walletServiceVersion);
+        walletURL = format("http://{0}:{1}/DVP/API/{2}/PaymentManager/Customer/Wallet/Credit", '192.168.0.39', "3333", config.Services.walletServiceVersion);
 
     }
-    walletURL = format("http://{0}:{1}/DVP/API/{2}/PaymentManager/Customer/Wallet/Credit", 'localhost', "3333", config.Services.walletServiceVersion);
+    walletURL = format("http://{0}:{1}/DVP/API/{2}/PaymentManager/Customer/Wallet/Credit", '192.168.0.39', "3333", config.Services.walletServiceVersion);
 
     var date = new Date();
     var day  = date.getDate();
     var remaining_days = 30-day;
-    //console.log(day);
 
-    var amount = ((req.body.unitPrice) * (req.body.units) * remaining_days)/30;
+    console.log(req.body);
+
+
+    var amount = 0;
+    if(req.body.setupFee)
+        amount = (((req.body.unitPrice) * (req.body.units) * remaining_days)/30)+req.body.setupFee;
+    else
+        amount = ((req.body.unitPrice) * (req.body.units) * remaining_days)/30;
+
+    amount = amount*100;
 
     logger.info('[BUY PACKAGE]:Amount to be deducted - %s ', amount);
 
@@ -54,12 +62,13 @@ function execute(req,res,next){
             Authorization: token,
             companyinfo: format("{0}:{1}", tenant , company)
         },
-        json: {"Amount": amount, "Reason": {name:req.body.name,type:req.body.type}}
+        json: {"Amount": amount, "Reason": req.body.name+':'+req.body.type}
     }, function (_error, _response, datax) {
         //console.log(datax);
         if (datax && datax.IsSuccess) {
 
             var message = msg.FormatMessage(undefined, "Package bought", true, datax);
+            logger.info('[BUY PACKAGE]:SUCCESS - %s ', JSON.stringify(datax));
             res.write(message);
             res.end();
 

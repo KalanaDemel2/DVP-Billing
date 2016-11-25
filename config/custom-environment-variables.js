@@ -51,7 +51,9 @@ module.exports = {
         "vdomain": "LB_FRONTEND",
         "domain": "HOST_NAME",
         "port": "HOST_BILLINGSERVICE_PORT",
-        "version": "HOST_VERSION" 
+        "version": "HOST_VERSION",
+        "reschedulefreqency": "RECHEDULE_FREQUENCY",
+        "rescheduletries": "RECHEDULE_TRIES"
     },
 
     "LBServer" : {
@@ -60,14 +62,14 @@ module.exports = {
         "port": "LB_PORT"
 
     },
-	
-	
+
+
     "Services" : {
         "accessToken": "HOST_TOKEN",
         "userServiceHost": "SYS_USERSERVICE_HOST",
         "userServicePort": "SYS_USERSERVICE_PORT",
         "userServiceVersion": "SYS_USERSERVICE_VERSION",
-       
+
         "walletServiceHost": "SYS_LITETICKET_HOST",
         "walletServicePort":  "SYS_LITETICKET_PORT",
         "walletServiceVersion":  "SYS_LITETICKET_VERSION"

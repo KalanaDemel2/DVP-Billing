@@ -8,7 +8,7 @@ var DbConn = require('dvp-dbmodels');
 var moment = require('moment');
 var Sequelize = require('sequelize');
 
-
+var datetime = new Date();
 /*-------------- Channel Master Data --------------------*/
 module.exports.CreateCustomerBillRecord = function (customer, callback) {
     DbConn.CustomerBillRecord
@@ -19,7 +19,9 @@ module.exports.CreateCustomerBillRecord = function (customer, callback) {
                 subscriptions: customer.subscriptions,
                 TenantId: customer.tenant,
                 CompanyId: customer.company,
-                lastBillCycle: customer.cycle
+                lastBillCycle: customer.cycle,
+                createdAt: datetime,
+                updatedAt:datetime
             }
         ).then(function (cmp) {
         callback.end(undefined, cmp);
@@ -32,7 +34,8 @@ module.exports.UpdateCustomerBillRecord = function (req, customer,cycle, callbac
     DbConn.CustomerBillRecord
         .update(
             {
-                lastBillCycle: cycle
+                lastBillCycle: cycle,
+                updatedAt:datetime
             }
             ,
             {
