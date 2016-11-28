@@ -29,8 +29,8 @@ function billing(){
      *
      */
 
-    //var billing = schedule.scheduleJob('1 0 1 1-12 *', function(){
-    var billing = schedule.scheduleJob('0 39 14 25 11 *', function(){
+    var billing = schedule.scheduleJob('1 0 1 1-12 *', function(){
+    //var billing = schedule.scheduleJob('0 39 14 25 11 *', function(){
         console.log('billing is running...');
         bill(1);
     });
