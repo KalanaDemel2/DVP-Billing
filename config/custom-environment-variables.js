@@ -52,8 +52,8 @@ module.exports = {
         "domain": "HOST_NAME",
         "port": "HOST_BILLINGSERVICE_PORT",
         "version": "HOST_VERSION",
-        "reschedulefreqency": "RECHEDULE_FREQUENCY",
-        "rescheduletries": "RECHEDULE_TRIES"
+        "reschedulefreqency": "BILLING_SCHEDULE_FREQUENCY",
+        "rescheduletries": "BILLING_SCHEDULE_TRIES"
     },
 
     "LBServer" : {
