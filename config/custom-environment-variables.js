@@ -70,8 +70,8 @@ module.exports = {
         "userServicePort": "SYS_USERSERVICE_PORT",
         "userServiceVersion": "SYS_USERSERVICE_VERSION",
 
-        "walletServiceHost": "SYS_LITETICKET_HOST",
-        "walletServicePort":  "SYS_LITETICKET_PORT",
-        "walletServiceVersion":  "SYS_LITETICKET_VERSION"
+        "walletServiceHost": "SYS_WALLETSERVICE_HOST",
+        "walletServicePort":  "SYS_WALLETSERVICE_PORT",
+        "walletServiceVersion":  "SYS_WALLETSERVICE_VERSION"
     }
 };

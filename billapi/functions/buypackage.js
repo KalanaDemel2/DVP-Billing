@@ -32,7 +32,7 @@ function execute(req,res,next){
 
     //console.log( req.user);
 
-
+    var walletURL = format("http://{0}/DVP/API/{1}/PaymentManager/Customer/Wallet/Credit",  config.Services.walletServiceHost,  config.Services.walletServiceVersion);
     if (validator.isIP(config.Services.walletServiceHost)) {
         //wallerURL = format("http://{0}:{1}/DVP/API/{2}/PaymentManager/Customer/"+userid+"/Wallet/Credit", config.Services.walletServiceHost, config.Services.walletServicePort, config.Services.walletServiceVersion);
         walletURL = format("http://{0}:{1}/DVP/API/{2}/PaymentManager/Customer/Wallet/Credit", config.Services.walletServiceHost, config.Services.walletServicePort, config.Services.walletServiceVersion);

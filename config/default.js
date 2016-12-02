@@ -3,12 +3,12 @@ module.exports = {
 
 
     "DB": {
-        "Type":"postgres",
-        "User":"duouser",
-        "Password":"DuoS123",
-        "Port":5432,
-        "Host":"localhost",
-        "Database":"dvpdb"
+        "Type": "postgres",
+        "User": "duo",
+        "Password": "DuoS123",
+        "Port": 5432,
+        "Host": "104.236.231.11",
+        "Database": "duo"
     },
 
 
@@ -36,7 +36,7 @@ module.exports = {
         "vdomain": "localhost",
         "domain": "localhost",
         "port": "4444",
-        "version": "1.0",
+        "version": "1.0.0.0",
         "reschedulefreqency": "1",
         "rescheduletries": "3"
     },
@@ -77,7 +77,7 @@ module.exports = {
         "userServiceVersion": "1.0.0.0",
         //"walletServiceHost": "127.0.0.1",
         //"walletServiceHost": "192.168.0.39",
-        "walletServiceHost": "walletservice.app.veery.cloud",
+        "walletServiceHost": "127.0.0.1",
         "walletServicePort": "3333",
         "walletServiceVersion": "1.0.0.0"
 
