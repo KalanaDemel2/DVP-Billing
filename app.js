@@ -11,8 +11,10 @@ var port = config.Host.port || 3000;
 var host = config.Host.vdomain || 'localhost';
 
 var buyPackage = require("./billapi/functions/buypackage");
-var billing = require("./Core/scheduler");
+var ratings = require("./billapi/functions/ratings");
 
+var billing = require("./Core/scheduler");
+var diameter = require("./Core/diameter");
 
 var server = restify.createServer({
   name: "DVP Billing Service"
@@ -38,13 +40,14 @@ var token = format("Bearer {0}",config.Services.accessToken);
 
 
 server.post('/DVP/API/:version/Billing/BuyPackage',authorization({resource:"billing", action:"write"}), buyPackage.execute);
-
-
+server.post('/DVP/API/:version/Billing/updateRatings',authorization({resource:"billing", action:"write"}), ratings.updateRatings);
 
 server.listen(port, function () {
 
   billing.bill();
 
   logger.info("DVP-AutoAttendantService.main Server %s listening at %s", server.name, server.url);
+  diameter.init();
+
   //console.log('%s listening at %s', server.name, server.url);
 });

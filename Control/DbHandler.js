@@ -82,3 +82,49 @@ module.exports.CustomerCycleById = function (customer, res) {
     });
 };
 
+/*-------------- Channel Master Data --------------------*/
+module.exports.CreateRatingRecord = function (data, callback) {
+    var datetime = new Date();
+    DbConn.CallRatings
+        .create(
+            {
+                Country : data.Country,
+                NumberType : data.NumberType,
+                AreaCode: data.AreaCode,
+                SetupFee: data.SetupFee,
+                MonthlyFee:  data.MonthlyFee,
+                CallCapacityZones: data.CallCapacityZones,
+                LandlineSetup: data.LandlineSetup,
+                LandlinePerMin: data.LandlinePerMin,
+                MobileSetup: data.MobileSetup,
+                MobilePerMin: data.MobilePerMin,
+                PayphoneSetup: data.PayphoneSetup,
+                PayphonePerMin: data.PayphonePerMin
+            }
+        ).then(function (cmp) {
+        callback(undefined, cmp);
+    }).error(function (err) {
+        callback(err, undefined);
+    });
+};
+
+module.exports.getRatingRecords = function (res) {
+    DbConn.CallRatings
+        .findAll({}).then(function (CallRatings) {
+        var jsonString = messageFormatter.FormatMessage(undefined, "EXCEPTION", true, 0);
+        if (CallRatings) {
+            var data = CallRatings
+            jsonString = messageFormatter.FormatMessage(undefined, "EXCEPTION", true, data);
+        }
+        else {
+            jsonString = messageFormatter.FormatMessage(undefined, "EXCEPTION", false, 0);
+        }
+
+
+        res(null,jsonString);
+    }).error(function (err) {
+        var jsonString = messageFormatter.FormatMessage(err, "EXCEPTION", false, undefined);
+
+        res(err,jsonString);
+    });
+};
