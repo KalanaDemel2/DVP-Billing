@@ -83,23 +83,13 @@ module.exports.CustomerCycleById = function (customer, res) {
 };
 
 /*-------------- Channel Master Data --------------------*/
-module.exports.CreateRatingRecord = function (data, callback) {
-    var datetime = new Date();
+module.exports.CreateRatingRecord = function (provider, data, callback) {
+    //console.log(provider)
     DbConn.CallRatings
-        .create(
+        .upsert(
             {
-                Country : data.Country,
-                NumberType : data.NumberType,
-                AreaCode: data.AreaCode,
-                SetupFee: data.SetupFee,
-                MonthlyFee:  data.MonthlyFee,
-                CallCapacityZones: data.CallCapacityZones,
-                LandlineSetup: data.LandlineSetup,
-                LandlinePerMin: data.LandlinePerMin,
-                MobileSetup: data.MobileSetup,
-                MobilePerMin: data.MobilePerMin,
-                PayphoneSetup: data.PayphoneSetup,
-                PayphonePerMin: data.PayphonePerMin
+                Provider : provider,
+                PaymentData : data
             }
         ).then(function (cmp) {
         callback(undefined, cmp);
@@ -113,14 +103,12 @@ module.exports.getRatingRecords = function (res) {
         .findAll({}).then(function (CallRatings) {
         var jsonString = messageFormatter.FormatMessage(undefined, "EXCEPTION", true, 0);
         if (CallRatings) {
-            var data = CallRatings
+            var data = CallRatings;
             jsonString = messageFormatter.FormatMessage(undefined, "EXCEPTION", true, data);
         }
         else {
             jsonString = messageFormatter.FormatMessage(undefined, "EXCEPTION", false, 0);
         }
-
-
         res(null,jsonString);
     }).error(function (err) {
         var jsonString = messageFormatter.FormatMessage(err, "EXCEPTION", false, undefined);

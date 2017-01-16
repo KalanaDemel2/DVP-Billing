@@ -2,9 +2,11 @@
  * Created by Kalana on 12/5/2016.
  */
 var diameter = require('diameter');
+var ratings = require('../billapi/functions/ratings');
 var scheduler = require('./scheduler');
 var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 const avp = require('diameter-avp-object');
+var walletHandler = require('./WalletHandler');
 
 var serverRealm = 'example.org';
 var serverHost = 'localhost';
@@ -45,7 +47,7 @@ function processDiameterMessages(event,response) {
             ['Host-IP-Address', relayIP],
             ['Acct-Application-Id', 'Relay'],
             ['Auth-Application-Id', 'Relay'],
-            ['Product-Name', 'node-diameter-relay-0.1']
+            ['Product-Name', 'node-diameter-server-0.1']
         ]);
         event.callback(event.response);
     }
@@ -70,8 +72,8 @@ function processDiameterMessages(event,response) {
             switch (avpObj.requestedAction){
                 case 'PRICE_ENQUIRY':
                     event.response.body = event.response.body.concat([
-                        ['Result-Code', 'DIAMETER_SUCCESS'], // You can also define enum values by their integer codes
-                        ['Origin-Host', serverHost], // or AVP names, this is 'Origin-Host'
+                        ['Result-Code', 'DIAMETER_SUCCESS'], 
+                        ['Origin-Host', serverHost], 
                         ['Origin-Realm', serverRealm],
                         ['Auth-Application-Id', 'Diameter Credit Control'],
                         ['CC-Request-Number', 0]
@@ -80,8 +82,8 @@ function processDiameterMessages(event,response) {
 
                 case 'CHECK_BALANCE':
                     event.response.body = event.response.body.concat([
-                        ['Result-Code', 'DIAMETER_SUCCESS'], // You can also define enum values by their integer codes
-                        ['Origin-Host', serverHost], // or AVP names, this is 'Origin-Host'
+                        ['Result-Code', 'DIAMETER_SUCCESS'], 
+                        ['Origin-Host', serverHost], 
                         ['Origin-Realm', serverRealm],
                         ['Auth-Application-Id', 'Diameter Credit Control'],
                         ['CC-Request-Number', 0]
@@ -89,8 +91,8 @@ function processDiameterMessages(event,response) {
                     break;
                 case 'DIRECT_DEBITING':
                     event.response.body = event.response.body.concat([
-                        ['Result-Code', 'DIAMETER_SUCCESS'], // You can also define enum values by their integer codes
-                        ['Origin-Host', serverHost], // or AVP names, this is 'Origin-Host'
+                        ['Result-Code', 'DIAMETER_SUCCESS'], 
+                        ['Origin-Host', serverHost], 
                         ['Origin-Realm', serverRealm],
                         ['Auth-Application-Id', 'Diameter Credit Control'],
                         ['CC-Request-Number', 0]
@@ -123,33 +125,75 @@ function processDiameterMessages(event,response) {
                 //Session Request
                 case 'INITIAL_REQUEST':
 
-                    event.response.body = event.response.body.concat([
-                        ['Result-Code', 'DIAMETER_SUCCESS'], // You can also define enum values by their integer codes
-                        ['Origin-Host', serverHost], // or AVP names, this is 'Origin-Host'
-                        ['Origin-Realm', serverRealm],
-                        ['Auth-Application-Id', 'Diameter Credit Control'],
-                        ['CC-Request-Number', 0]
-                    ]);
-                   event.callback(event.response);
+                    var data = avpObj.subscriptionId.subscriptionIdData;
+
+                    var req = {
+                        body :{},
+                        user :{}
+                    };
+
+                    var datapasred = JSON.parse(data);
+
+                    req.body.Amount = 0 ;
+                    req.user.iss = datapasred.user;
+                    req.body.Reason = 'Per minute Call billeng credit reservation'
+                    req.user.tenant = datapasred.tenant;
+                    req.user.company = datapasred.company;
+
+                    ratings.getRating(datapasred.to,datapasred.from, datapasred.provider, function(rating){
+
+                        req.body.Amount = rating *100 ;
+                        walletHandler.LockCreditFromCustomer(req, function(found){
+
+                            if(JSON.parse(found).IsSuccess){
+                                event.response.body = event.response.body.concat([
+                                    ['Result-Code', 'DIAMETER_SUCCESS'],
+                                    ['Origin-Host', serverHost],
+                                    ['Origin-Realm', serverRealm],
+                                    ['Auth-Application-Id', 'Diameter Credit Control'],
+                                    ['CC-Request-Number', 0]
+                                ]);
+                                event.callback(event.response);
+                            }
+                            else {
+
+                                console.log(found);
+                                event.response.body = event.response.body.concat([
+                                    ['Result-Code', 'DIAMETER_RESOURCES_EXCEEDED'],
+                                    ['Origin-Host', serverHost],
+                                    ['Origin-Realm', serverRealm],
+                                    ['Auth-Application-Id', 'Diameter Credit Control'],
+                                    ['CC-Request-Number', 0]
+                                ]);
+                                event.callback(event.response);
+
+                            }
+
+                        })
+
+                    });
+
+                    
                    break;
 
                 case 'UPDATE_REQUEST':
 
                     /*event.response.body = event.response.body.concat([
-                        ['Result-Code', 'DIAMETER_SUCCESS'], // You can also define enum values by their integer codes
-                        ['Origin-Host', serverHost], // or AVP names, this is 'Origin-Host'
+                        ['Result-Code', 'DIAMETER_SUCCESS'], 
+                        ['Origin-Host', serverHost], 
                         ['Origin-Realm', serverRealm],
                         ['Auth-Application-Id', 'Diameter Credit Control'],
                         ['CC-Request-Number', 0]
                     ]);*/
-                    var data = {dsid : avpObj.sessionId, csid : '123', userinfo : avpObj.subscriptionId.subscriptionIdData };
+                    var data = {dsid : avpObj.sessionId, csid : '123', userinfo : avpObj.subscriptionId.subscriptionIdData};
+                    //console.log(avpObj)
                     scheduler.callBilling(data).initializeCall(data, function(found){
                         //console.log(found);
 
                         if(found && found.IsSuccess){
                             event.response.body = event.response.body.concat([
-                                ['Result-Code', 'DIAMETER_SUCCESS'], // You can also define enum values by their integer codes
-                                ['Origin-Host', serverHost], // or AVP names, this is 'Origin-Host'
+                                ['Result-Code', 'DIAMETER_SUCCESS'], 
+                                ['Origin-Host', serverHost], 
                                 ['Origin-Realm', serverRealm],
                                 ['Auth-Application-Id', 'Diameter Credit Control'],
                                 ['CC-Request-Number', 0]
@@ -160,8 +204,8 @@ function processDiameterMessages(event,response) {
 
                             console.log(found);
                             event.response.body = event.response.body.concat([
-                                ['Result-Code', 'DIAMETER_RESOURCES_EXCEEDED'], // You can also define enum values by their integer codes
-                                ['Origin-Host', serverHost], // or AVP names, this is 'Origin-Host'
+                                ['Result-Code', 'DIAMETER_RESOURCES_EXCEEDED'], 
+                                ['Origin-Host', serverHost], 
                                 ['Origin-Realm', serverRealm],
                                 ['Auth-Application-Id', 'Diameter Credit Control'],
                                 ['CC-Request-Number', 0]
@@ -173,8 +217,8 @@ function processDiameterMessages(event,response) {
                     break;
                 case 'TERMINATION_REQUEST':
                     event.response.body = event.response.body.concat([
-                        ['Result-Code', 'DIAMETER_SUCCESS'], // You can also define enum values by their integer codes
-                        ['Origin-Host', serverHost], // or AVP names, this is 'Origin-Host'
+                        ['Result-Code', 'DIAMETER_SUCCESS'], 
+                        ['Origin-Host', serverHost], 
                         ['Origin-Realm', serverRealm],
                         ['Auth-Application-Id', 'Diameter Credit Control'],
                         ['CC-Request-Number', 0]

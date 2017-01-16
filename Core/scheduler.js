@@ -13,6 +13,7 @@ var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 var token = format("Bearer {0}",config.Services.accessToken);
 var PublishToQueue = require('../Control/Worker').PublishToQueue;
 var DBconn = require('../Control/DbHandler');
+var walletHandler = require('./WalletHandler');
 var rating = require('../billapi/functions/ratings');
 var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJsonFormatter.js');
 var msg = require('dvp-common/CommonMessageGenerator/ClientMessageJsonFormatter.js');
@@ -585,9 +586,10 @@ function callBilling(data){
             callSessionValidator.getCallSession(JSON.parse(data.userinfo).csid, function (error, obj){
                 if(obj){
 
-                    var amount = 150;
-                    rating.getRating(JSON.parse(data.userinfo).to, JSON.parse(data.userinfo).from, function(res){
-
+                    var dataParsed = JSON.parse(data.userinfo);
+                    var amount = 100;
+                    rating.getRating(dataParsed.to, dataParsed.from, dataParsed.provider, function(res){
+                        console.log(res);
                         if(res!=null){
                             amount = res *100;
                             console.log('Charging Amount in cents');
@@ -597,113 +599,144 @@ function callBilling(data){
                             amount = -1;
                         }
 
+                        console.log({"Amount":amount , "Reason": "Call Billing to : "});
+
+                        if(amount != -1){
+                            console.log('00000000000000000000000000000000000000000000000000000');
+
+                            var req = {
+                                body :{},
+                                user :{}
+                            };
 
 
-                    });
+                            req.body.Amount = 0 ;
+                            req.user.iss = dataParsed.user;
+                            req.body.Reason = 'Per minute Call billeng credit reservation'
+                            req.user.tenant = dataParsed.tenant;
+                            req.user.company = dataParsed.company;
+
+                            walletHandler.ReleaseCreditFromCustomer(req, function(res){
+
+                                if(JSON.parse(res).IsSuccess){
+
+                                    request({
+                                        method: "PUT",
+                                        url: walletURL,
+                                        headers: {
+                                            Authorization: token,
+                                            companyinfo: format("{0}:{1}", JSON.parse(data.userinfo).tenant, JSON.parse(data.userinfo).company)
+                                        },
+                                        json: {"Amount":amount , "Reason": "Call Billing to : "}
+                                    }, function (_error, _response, datax) {
+
+                                        if(datax && datax.IsSuccess){
+                                            console.log(datax);
+                                            callback(datax);
+                                        }
+                                        else if(datax && !datax.IsSuccess){
 
 
-                    if(amount != -1){
-                        console.log('00000000000000000000000000000000000000000000000000000');
-                        request({
-                            method: "PUT",
-                            url: walletURL,
-                            headers: {
-                                Authorization: token,
-                                companyinfo: format("{0}:{1}", JSON.parse(data.userinfo).tenant, JSON.parse(data.userinfo).company)
-                            },
-                            json: {"Amount":amount , "Reason": "Call Billing to : "}
-                        }, function (_error, _response, datax) {
+                                            var monitorRestApiUrl = format('http://{0}/DVP/API/{1}/MonitorRestAPI/Dispatch/'+JSON.parse(data.userinfo).csid+'/disconnect', config.Services.monitorRestApiHost, config.Services.monitorRestApiVersion);
+                                            if (validator.isIP(config.Services.walletServiceHost)) {
+                                                monitorRestApiUrl = format('http://{0}/DVP/API/{1}/MonitorRestAPI/Dispatch/'+JSON.parse(data.userinfo).csid+'/disconnect', config.Services.monitorRestApiHost, config.Services.monitorRestApiPort, config.Services.monitorRestApiVersion);
 
-                            if(datax && datax.IsSuccess){
-                                console.log(datax);
-                                callback(datax);
-                            }
-                            else if(datax && !datax.IsSuccess){
+                                            }
+
+                                            request({
+                                                method: "GET",
+                                                url: monitorRestApiUrl,
+                                                headers: {
+                                                    Authorization: token,
+                                                    companyinfo: format("{0}:{1}", JSON.parse(data.userinfo).tenant, JSON.parse(data.userinfo).company)
+                                                }
+                                            }, function (_error, _response, datax) {
+                                                //console.log(datax);
+                                                if(datax && datax.IsSuccess){
+
+                                                    var res = {IsSuccess : false};
+                                                    callback(res);
+                                                    console.log(datax);
+                                                }
+                                                else{
+                                                    var res = {IsSuccess : false};
+                                                    callback(res);
+                                                    console.log(_error);
+                                                }
 
 
-                                var monitorRestApiUrl = format('http://{0}/DVP/API/{1}/MonitorRestAPI/Dispatch/'+JSON.parse(data.userinfo).csid+'/disconnect', config.Services.monitorRestApiHost, config.Services.monitorRestApiVersion);
+                                            });
+
+
+
+                                        }
+                                        else{
+                                            console.log(_error);
+                                            callback(_error);
+                                        }
+
+
+                                    });
+
+                                }
+                                else{
+                                    var res = {IsSuccess : false};
+                                    callback(res);
+                                }
+
+
+                            });
+
+
+
+                            var j = schedule.scheduleJob(rule, function(){
+                                var walletURL = format("http://{0}/DVP/API/{1}/PaymentManager/Customer/Wallet/Credit", config.Services.walletServiceHost, config.Services.walletServiceVersion);
+
                                 if (validator.isIP(config.Services.walletServiceHost)) {
-                                    monitorRestApiUrl = format('http://{0}/DVP/API/{1}/MonitorRestAPI/Dispatch/'+JSON.parse(data.userinfo).csid+'/disconnect', config.Services.monitorRestApiHost, config.Services.monitorRestApiPort, config.Services.monitorRestApiVersion);
+                                    walletURL = format("http://{0}:{1}/DVP/API/{2}/PaymentManager/Customer/Wallet/Credit", config.Services.walletServiceHost, config.Services.walletServicePort, config.Services.walletServiceVersion);
 
                                 }
 
                                 request({
-                                    method: "GET",
-                                    url: monitorRestApiUrl,
+                                    method: "PUT",
+                                    url: walletURL,
                                     headers: {
                                         Authorization: token,
                                         companyinfo: format("{0}:{1}", JSON.parse(data.userinfo).tenant, JSON.parse(data.userinfo).company)
-                                    }
+                                    },
+                                    json: {"Amount":amount , "Reason": "Call Billing to : " }
                                 }, function (_error, _response, datax) {
                                     //console.log(datax);
                                     if(datax && datax.IsSuccess){
-
-                                        var res = {IsSuccess : false};
-                                        callback(res);
                                         console.log(datax);
                                     }
                                     else{
-                                        var res = {IsSuccess : false};
-                                        callback(res);
                                         console.log(_error);
                                     }
 
 
                                 });
-
-
-
-                            }
-                            else{
-                                console.log(_error);
-                                callback(_error);
-                            }
-
-
-                        });
-
-
-                        var j = schedule.scheduleJob(rule, function(){
-                            var walletURL = format("http://{0}/DVP/API/{1}/PaymentManager/Customer/Wallet/Credit", config.Services.walletServiceHost, config.Services.walletServiceVersion);
-
-                            if (validator.isIP(config.Services.walletServiceHost)) {
-                                walletURL = format("http://{0}:{1}/DVP/API/{2}/PaymentManager/Customer/Wallet/Credit", config.Services.walletServiceHost, config.Services.walletServicePort, config.Services.walletServiceVersion);
-
-                            }
-
-                            request({
-                                method: "PUT",
-                                url: walletURL,
-                                headers: {
-                                    Authorization: token,
-                                    companyinfo: format("{0}:{1}", JSON.parse(data.userinfo).tenant, JSON.parse(data.userinfo).company)
-                                },
-                                json: {"Amount":amount , "Reason": "Call Billing to : " }
-                            }, function (_error, _response, datax) {
-                                //console.log(datax);
-                                if(datax && datax.IsSuccess){
-                                    console.log(datax);
-                                }
-                                else{
-                                    console.log(_error);
-                                }
-
-
                             });
-                        });
 
-                        var task = {
-                            diameterSessionId : data.dsid,
-                            callSessionId : data.csid,
-                            task : j
-                        };
+                            var task = {
+                                diameterSessionId : data.dsid,
+                                callSessionId : data.csid,
+                                task : j
+                            };
 
-                        calls.push(task)
-                    }
-                    else {
-                        var erroresp = {IsSuccess : false}
-                        callback(errresp)
-                    }
+                            calls.push(task)
+                        }
+                        else {
+                            console.log('ERROR')
+                            var erroresp = {IsSuccess : false}
+                            callback(erroresp)
+                        }
+
+
+
+                    });
+
+
 
                 }
                 else if(error){
@@ -711,14 +744,6 @@ function callBilling(data){
                     callback(errresp)
                 }
             });
-
-
-
-
-
-
-
-
 
 
         },
