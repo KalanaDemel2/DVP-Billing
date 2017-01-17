@@ -12,13 +12,12 @@ module.exports = {
     },
 
 
-    "Redis":
-    {
+    "Redis": {
         "ip": "45.55.142.207",
         "port": 6389,
-        "user": "duo",
-        "password": "DuoS123"
-
+        "password":"DuoS123",
+        "redisdb":0,
+        "ttl":30000
     },
 
 
@@ -38,7 +37,9 @@ module.exports = {
         "port": "4444",
         "version": "1.0.0.0",
         "reschedulefreqency": "1",
-        "rescheduletries": "3"
+        "rescheduletries": "3",
+        "diameterDomain": "localhost",
+        "diameterPort": "4444"
     },
 
     "LBServer" : {

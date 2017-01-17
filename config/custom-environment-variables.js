@@ -53,7 +53,10 @@ module.exports = {
         "port": "HOST_BILLINGSERVICE_PORT",
         "version": "HOST_VERSION",
         "reschedulefreqency": "BILLING_SCHEDULE_FREQUENCY",
-        "rescheduletries": "BILLING_SCHEDULE_TRIES"
+        "rescheduletries": "BILLING_SCHEDULE_TRIES",
+        "diameterDomain": "HOST_DIAMETERSERVER_NAME",
+        "diameterPort": "HOST_DIAMETERSERVER_PORT"
+
     },
 
     "LBServer" : {
