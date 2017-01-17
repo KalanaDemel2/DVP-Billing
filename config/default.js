@@ -35,6 +35,7 @@ module.exports = {
         "vdomain": "localhost",
         "domain": "localhost",
         "port": "4444",
+        "tcpPort": "5555",
         "version": "1.0.0.0",
         "reschedulefreqency": "1",
         "rescheduletries": "3",
