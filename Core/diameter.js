@@ -7,16 +7,17 @@ var scheduler = require('./scheduler');
 var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 const avp = require('diameter-avp-object');
 var walletHandler = require('./WalletHandler');
+var config = require('config');
 
 var serverRealm = 'example.org';
-var serverHost = 'localhost';
-var serverPort = 5555;
+var serverHost = config.Host.diameterDomain;
+var serverPort = config.Host.diameterPort;
 
 
 var relayRealm = 'example.com';
 var relayHost = 'localhost';
 var relayPort = 3868;
-var relayIP = '127.0.0.1'
+var relayIP = '127.0.0.1';
 
 var optionsAsTcpServer = {
     beforeAnyMessage: diameter.logMessage,

@@ -40,7 +40,7 @@ module.exports = {
         "reschedulefreqency": "1",
         "rescheduletries": "3",
         "diameterDomain": "localhost",
-        "diameterPort": "4444"
+        "diameterPort": "5555"
     },
 
     "LBServer" : {
