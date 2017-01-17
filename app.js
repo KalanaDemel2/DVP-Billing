@@ -42,12 +42,16 @@ var token = format("Bearer {0}",config.Services.accessToken);
 server.post('/DVP/API/:version/Billing/BuyPackage',authorization({resource:"billing", action:"write"}), buyPackage.execute);
 server.post('/DVP/API/:version/Billing/updateRatings',authorization({resource:"billing", action:"write"}), ratings.updateRatings);
 
-server.listen(port, function () {
 
-  billing.bill();
+if(config.Host.type === "http"){
+  server.listen(port, function () {
 
-  logger.info("DVP-AutoAttendantService.main Server %s listening at %s", server.name, server.url);
+    billing.bill();
+    logger.info("DVP-AutoAttendantService.main Server %s listening at %s", server.name, server.url);
+
+  });
+}
+else if(config.Host.type === "diameter") {
   diameter.init();
+}
 
-  //console.log('%s listening at %s', server.name, server.url);
-});

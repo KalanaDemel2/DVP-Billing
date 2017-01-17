@@ -738,21 +738,18 @@ function callBilling(data){
                             calls.push(task)
                         }
                         else {
-                            console.log('ERROR')
-                            var erroresp = {IsSuccess : false}
+                            console.log('ERROR');
+                            var erroresp = {IsSuccess : false};
                             callback(erroresp)
                         }
-
-
-
                     });
 
 
 
                 }
                 else if(error){
-                    var errresp = {IsSuccess : false, error : error}
-                    callback(errresp)
+                    var errresp = {IsSuccess : false, error : error};
+                    callback(errresp);
                 }
             });
 
