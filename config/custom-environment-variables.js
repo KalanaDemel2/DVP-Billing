@@ -75,6 +75,10 @@ module.exports = {
 
         "walletServiceHost": "SYS_WALLETSERVICE_HOST",
         "walletServicePort":  "SYS_WALLETSERVICE_PORT",
-        "walletServiceVersion":  "SYS_WALLETSERVICE_VERSION"
+        "walletServiceVersion":  "SYS_WALLETSERVICE_VERSION",
+
+        "monitorRestApiHost": "SYS_MONITORRESTAPI_HOST",
+        "monitorRestApiPost":  "SYS_MONITORRESTAPI_PORT",
+        "monitorRestApiVersion":  "SYS_MONITORRESTAPI_VERSION"
     }
 };

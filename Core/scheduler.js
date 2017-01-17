@@ -610,12 +610,12 @@ function callBilling(data){
                             };
 
 
-                            req.body.Amount = 0 ;
+                            req.body.Amount = amount ;
                             req.user.iss = dataParsed.user;
-                            req.body.Reason = 'Per minute Call billeng credit reservation'
+                            req.body.Reason = 'Per minute Call billeng credit reservation';
                             req.user.tenant = dataParsed.tenant;
                             req.user.company = dataParsed.company;
-
+                            req.body.SessionId = dataParsed.csid;
                             walletHandler.ReleaseCreditFromCustomer(req, function(res){
 
                                 if(JSON.parse(res).IsSuccess){
@@ -690,37 +690,48 @@ function callBilling(data){
 
 
                             var j = schedule.scheduleJob(rule, function(){
-                                var walletURL = format("http://{0}/DVP/API/{1}/PaymentManager/Customer/Wallet/Credit", config.Services.walletServiceHost, config.Services.walletServiceVersion);
 
-                                if (validator.isIP(config.Services.walletServiceHost)) {
-                                    walletURL = format("http://{0}:{1}/DVP/API/{2}/PaymentManager/Customer/Wallet/Credit", config.Services.walletServiceHost, config.Services.walletServicePort, config.Services.walletServiceVersion);
+                                callSessionValidator.getCallSession(JSON.parse(data.userinfo).csid, function (error, obj){
+                                    if(obj){
+                                        var walletURL = format("http://{0}/DVP/API/{1}/PaymentManager/Customer/Wallet/Credit", config.Services.walletServiceHost, config.Services.walletServiceVersion);
 
-                                }
+                                        if (validator.isIP(config.Services.walletServiceHost)) {
+                                            walletURL = format("http://{0}:{1}/DVP/API/{2}/PaymentManager/Customer/Wallet/Credit", config.Services.walletServiceHost, config.Services.walletServicePort, config.Services.walletServiceVersion);
 
-                                request({
-                                    method: "PUT",
-                                    url: walletURL,
-                                    headers: {
-                                        Authorization: token,
-                                        companyinfo: format("{0}:{1}", JSON.parse(data.userinfo).tenant, JSON.parse(data.userinfo).company)
-                                    },
-                                    json: {"Amount":amount , "Reason": "Call Billing to : " }
-                                }, function (_error, _response, datax) {
-                                    //console.log(datax);
-                                    if(datax && datax.IsSuccess){
-                                        console.log(datax);
+                                        }
+
+                                        request({
+                                            method: "PUT",
+                                            url: walletURL,
+                                            headers: {
+                                                Authorization: token,
+                                                companyinfo: format("{0}:{1}", JSON.parse(data.userinfo).tenant, JSON.parse(data.userinfo).company)
+                                            },
+                                            json: {"Amount":amount , "Reason": "Call Billing to : " }
+                                        }, function (_error, _response, datax) {
+                                            //console.log(datax);
+                                            if(datax && datax.IsSuccess){
+                                                console.log(datax);
+                                            }
+                                            else{
+                                                console.log(_error);
+                                            }
+
+
+                                        });
                                     }
-                                    else{
-                                        console.log(_error);
+                                    else if(error){
+                                        j.cancel();
+                                        //var errresp = {IsSuccess : false, error : error};
+                                        //callback(errresp)
                                     }
-
-
                                 });
+
                             });
 
                             var task = {
                                 diameterSessionId : data.dsid,
-                                callSessionId : data.csid,
+                                callSessionId : dataParsed.csid,
                                 task : j
                             };
 

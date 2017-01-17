@@ -139,7 +139,7 @@ function processDiameterMessages(event,response) {
                     req.body.Reason = 'Per minute Call billeng credit reservation'
                     req.user.tenant = datapasred.tenant;
                     req.user.company = datapasred.company;
-
+                    req.body.SessionId = datapasred.csid;
                     ratings.getRating(datapasred.to,datapasred.from, datapasred.provider, function(rating){
 
                         req.body.Amount = rating *100 ;

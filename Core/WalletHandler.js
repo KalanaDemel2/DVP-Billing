@@ -1123,24 +1123,28 @@ module.exports.getWalletHistory = function (req, res) {
 
 };
 
-var LockCredit = function (amount, invokeBy, reason, tenant, company) {
+var LockCredit = function (sessionId,amount, invokeBy, reason, tenant, company) {
 
     var deferred = Q.defer();
     DbConn.Wallet.find({
         where: [{TenantId: tenant}, {CompanyId: company}, {Status: true}]
     }).then(function (wallet) {
+        if(!sessionId){
+            deferred.reject(new Error("Invalid Session Id."));
+            return;
+        }
         if (wallet) {
-            var walletId = wallet.WalletId;
-            lock(walletId, ttl, function (done) {
+            lock(sessionId, ttl, function (done) {
                 var credit = parseFloat(wallet.Credit);
+                var lockCredit = parseFloat(wallet.LockCredit);
                 if (credit > amount) {
-
                     credit = credit - amount;
+                    lockCredit = lockCredit + amount;
                     DbConn.Wallet
                         .update(
                             {
                                 Credit: credit,
-                                LockCredit: amount
+                                LockCredit: lockCredit
                             },
                             {
                                 where: [{WalletId: wallet.WalletId}]
@@ -1166,7 +1170,7 @@ var LockCredit = function (amount, invokeBy, reason, tenant, company) {
                                 "amount": amount, "Balance": credit,
                                 "LockCredit": amount,
                                 "invokeBy": invokeBy,
-                                "OtherJsonData": undefined
+                                "OtherJsonData": "{'sessionId':"+sessionId+"}"
                             },
                             WalletId: cmp.WalletId,
                             Operation: 'DeductCredit',
@@ -1196,21 +1200,26 @@ var LockCredit = function (amount, invokeBy, reason, tenant, company) {
 
 };
 
-var ReleaseCredit = function (invokeBy, reason, tenant, company) {
+var ReleaseCredit = function (sessionId,amount,invokeBy, reason, tenant, company) {
 
     var deferred = Q.defer();
     DbConn.Wallet.find({
         where: [{TenantId: tenant}, {CompanyId: company}, {Status: true}]
     }).then(function (wallet) {
         if (wallet) {
-            var walletId = wallet.WalletId;
+            var walletId = sessionId? sessionId: wallet.WalletId;
             lock(walletId, ttl, function (done) {
-                var credit = parseFloat(wallet.Credit) + parseFloat(wallet.LockCredit);
+                var lockCredit = parseFloat(wallet.LockCredit) - parseFloat(amount);
+                if(lockCredit<0){
+                    deferred.reject(new Error("Invalid Amount. Please Contact System Administrator."));
+                    return ;
+                }
+                var credit = parseFloat(wallet.Credit) + parseFloat(amount);
                 DbConn.Wallet
                     .update(
                         {
                             Credit: credit,
-                            LockCredit: 0
+                            LockCredit: lockCredit
                         },
                         {
                             where: [{WalletId: wallet.WalletId}]
@@ -1262,25 +1271,42 @@ var ReleaseCredit = function (invokeBy, reason, tenant, company) {
 };
 
 module.exports.LockCreditFromCustomer = function (req, res) {
-    LockCredit(req.body.Amount, req.user.iss, req.body.Reason, req.user.tenant, req.user.company).then(function (cmp) {
-        var jsonString = messageFormatter.FormatMessage(undefined, "EXCEPTION", true, cmp);
-        logger.info('LockCreditFromCustomer - [%s] .', jsonString);
-        res(jsonString);
-    }, function (error) {
-        var jsonString = messageFormatter.FormatMessage(error, "EXCEPTION", false, undefined);
+    if(!req.body.SessionId ||req.body.Amount<=0){
+        var jsonString = messageFormatter.FormatMessage(new Error("Invalid Details."), "EXCEPTION", false, undefined);
         logger.error('LockCreditFromCustomer -  [%s] .', jsonString);
         res(jsonString);
-    });
+    }
+    else{
+        LockCredit(req.body.SessionId,req.body.Amount, req.user.iss, req.body.Reason, req.user.tenant, req.user.company).then(function (cmp) {
+            var jsonString = messageFormatter.FormatMessage(undefined, "EXCEPTION", true, cmp);
+            logger.info('LockCreditFromCustomer - [%s] .', jsonString);
+            res(jsonString);
+        }, function (error) {
+            var jsonString = messageFormatter.FormatMessage(error, "EXCEPTION", false, undefined);
+            logger.error('LockCreditFromCustomer -  [%s] .', jsonString);
+            res(jsonString);
+        });
+    }
+
 };
 
 module.exports.ReleaseCreditFromCustomer = function (req, res) {
-    ReleaseCredit(req.user.iss, req.body.Reason, req.user.tenant, req.user.company).then(function (cmp) {
-        var jsonString = messageFormatter.FormatMessage(undefined, "EXCEPTION", true, cmp);
-        logger.info('ReleaseCredit - [%s] .', jsonString);
+    console.log(req)
+    if(req.body.Amount<=0){
+        var jsonString = messageFormatter.FormatMessage(new Error("Invalid Details."), "EXCEPTION", false, undefined);
+        logger.error('LockCreditFromCustomer -  [%s] .', jsonString);
         res(jsonString);
-    }, function (error) {
-        var jsonString = messageFormatter.FormatMessage(error, "EXCEPTION", false, undefined);
-        logger.error('ReleaseCredit -  [%s] .', jsonString);
-        res(jsonString);
-    });
+    }
+    else{
+        ReleaseCredit(req.body.SessionId,req.body.Amount,req.user.iss, req.body.Reason, req.user.tenant, req.user.company).then(function (cmp) {
+            var jsonString = messageFormatter.FormatMessage(undefined, "EXCEPTION", true, cmp);
+            logger.info('ReleaseCredit - [%s] .', jsonString);
+            res(jsonString);
+        }, function (error) {
+            var jsonString = messageFormatter.FormatMessage(error, "EXCEPTION", false, undefined);
+            logger.error('ReleaseCredit -  [%s] .', jsonString);
+            res(jsonString);
+        });
+    }
+
 };
