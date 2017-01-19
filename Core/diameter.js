@@ -39,7 +39,6 @@ server.timeout = 5000;
 
 
 function processDiameterMessages(event,response) {
-
     if (event.message.command === 'Capabilities-Exchange') {
         event.response.body = event.response.body.concat([
             ['Result-Code', 'DIAMETER_SUCCESS'],
@@ -143,34 +142,49 @@ function processDiameterMessages(event,response) {
                     req.body.SessionId = datapasred.csid;
                     ratings.getRating(datapasred.to,datapasred.from, datapasred.provider, function(rating){
 
-                        req.body.Amount = rating *100 ;
-                        walletHandler.LockCreditFromCustomer(req, function(found){
 
-                            if(JSON.parse(found).IsSuccess){
-                                event.response.body = event.response.body.concat([
-                                    ['Result-Code', 'DIAMETER_SUCCESS'],
-                                    ['Origin-Host', serverHost],
-                                    ['Origin-Realm', serverRealm],
-                                    ['Auth-Application-Id', 'Diameter Credit Control'],
-                                    ['CC-Request-Number', 0]
-                                ]);
-                                event.callback(event.response);
-                            }
-                            else {
+                        console.log(rating);
+                        if(rating == -2){
+                            event.response.body = event.response.body.concat([
+                                ['Result-Code', 'DIAMETER_UNABLE_TO_DELIVER'],
+                                ['Origin-Host', serverHost],
+                                ['Origin-Realm', serverRealm],
+                                ['Auth-Application-Id', 'Diameter Credit Control'],
+                                ['CC-Request-Number', 0]
+                            ]);
+                            event.callback(event.response);
+                        }
+                        else{
+                            req.body.Amount = rating *100 ;
+                            walletHandler.LockCreditFromCustomer(req, function(found){
 
-                                console.log(found);
-                                event.response.body = event.response.body.concat([
-                                    ['Result-Code', 'DIAMETER_RESOURCES_EXCEEDED'],
-                                    ['Origin-Host', serverHost],
-                                    ['Origin-Realm', serverRealm],
-                                    ['Auth-Application-Id', 'Diameter Credit Control'],
-                                    ['CC-Request-Number', 0]
-                                ]);
-                                event.callback(event.response);
+                                if(JSON.parse(found).IsSuccess){
+                                    event.response.body = event.response.body.concat([
+                                        ['Result-Code', 'DIAMETER_SUCCESS'],
+                                        ['Origin-Host', serverHost],
+                                        ['Origin-Realm', serverRealm],
+                                        ['Auth-Application-Id', 'Diameter Credit Control'],
+                                        ['CC-Request-Number', 0]
+                                    ]);
+                                    event.callback(event.response);
+                                }
+                                else {
 
-                            }
+                                    console.log(found);
+                                    event.response.body = event.response.body.concat([
+                                        ['Result-Code', 'DIAMETER_RESOURCES_EXCEEDED'],
+                                        ['Origin-Host', serverHost],
+                                        ['Origin-Realm', serverRealm],
+                                        ['Auth-Application-Id', 'Diameter Credit Control'],
+                                        ['CC-Request-Number', 0]
+                                    ]);
+                                    event.callback(event.response);
 
-                        })
+                                }
+
+                            })
+                        }
+
 
                     });
 

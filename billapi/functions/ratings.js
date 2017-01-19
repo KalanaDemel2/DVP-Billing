@@ -46,15 +46,28 @@ function updateRatings(req, res, next){
 
 function getRating(to, from, provider, callback){
 
+    var numbererror = false;
 
-    var toNumberType = libphonenumber.phoneUtil.getNumberType(libphonenumber.phoneUtil.parseAndKeepRawInput(to, null));
-    var fromNumberType = libphonenumber.phoneUtil.getNumberType(libphonenumber.phoneUtil.parseAndKeepRawInput(from, null));
-    var toCountryCode = libphonenumber.phoneUtil.getRegionCodeForNumber(libphonenumber.phoneUtil.parseAndKeepRawInput(to, null));
-    var fromCountryCode = libphonenumber.phoneUtil.getRegionCodeForNumber(libphonenumber.phoneUtil.parseAndKeepRawInput(from, null));
-    var fromCountryDigit = libphonenumber.phoneUtil.getCountryCodeForRegion(fromCountryCode);
+    try{
+        var toNumberType = libphonenumber.phoneUtil.getNumberType(libphonenumber.phoneUtil.parseAndKeepRawInput(to, null));
+        var fromNumberType = libphonenumber.phoneUtil.getNumberType(libphonenumber.phoneUtil.parseAndKeepRawInput(from, null));
+        var toCountryCode = libphonenumber.phoneUtil.getRegionCodeForNumber(libphonenumber.phoneUtil.parseAndKeepRawInput(to, null));
+        var fromCountryCode = libphonenumber.phoneUtil.getRegionCodeForNumber(libphonenumber.phoneUtil.parseAndKeepRawInput(from, null));
+        var fromCountryDigit = libphonenumber.phoneUtil.getCountryCodeForRegion(fromCountryCode);
+
+    }
+    catch (e){
+        console.log("ERROR "+e);
+        numbererror = true
+    }
+
 
     var status = false;
-    if(ratingTable.length == 0){
+    if(numbererror){
+
+        callback(-2);
+    }
+    else if(ratingTable.length == 0){
 
         console.log('Rating table is empty, fetching data');
         DBconn.getRatingRecords(function(err,obj){
@@ -83,7 +96,7 @@ function getRating(to, from, provider, callback){
 
                         for(var i = 0; i<ratingTable.length; i++){
 
-                            
+
                             for (var index in ratingTable[i].PaymentData){
                                 //console.log(ratingTable[i].PaymentData[index].Country)
                                 if(ratingTable[i].Provider == provider && ratingTable[i].PaymentData[index].Country === 'LOCAL' ){
