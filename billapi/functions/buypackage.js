@@ -49,7 +49,7 @@ function execute(req,res,next){
     var packgedetails = req.body;
     packgedetails.id = tenant+"."+company+"."+month+"."+year;
     //console.log(req.body);
-
+    console.log(req.headers.authorization);
 
     var amount = 0;
     if(req.body.setupFee)
