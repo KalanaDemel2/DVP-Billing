@@ -32,7 +32,7 @@ module.exports = {
 
     "Host":
     {
-        "type" : "diameter",
+        "type" : "http",
         "vdomain": "localhost",
         "domain": "localhost",
         "port": "4444",
