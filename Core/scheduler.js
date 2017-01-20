@@ -644,7 +644,7 @@ function callBilling(data){
                                             }
 
                                             request({
-                                                method: "GET",
+                                                method: "POST",
                                                 url: monitorRestApiUrl,
                                                 headers: {
                                                     Authorization: token,
@@ -664,10 +664,7 @@ function callBilling(data){
                                                     console.log(_error);
                                                 }
 
-
                                             });
-
-
 
                                         }
                                         else{
@@ -714,7 +711,37 @@ function callBilling(data){
                                                 console.log(datax);
                                             }
                                             else{
+
+                                                var monitorRestApiUrl = format('http://{0}/DVP/API/{1}/MonitorRestAPI/Dispatch/'+JSON.parse(data.userinfo).csid+'/disconnect', config.Services.monitorRestApiHost, config.Services.monitorRestApiVersion);
+                                                if (validator.isIP(config.Services.walletServiceHost)) {
+                                                    monitorRestApiUrl = format('http://{0}/DVP/API/{1}/MonitorRestAPI/Dispatch/'+JSON.parse(data.userinfo).csid+'/disconnect', config.Services.monitorRestApiHost, config.Services.monitorRestApiPort, config.Services.monitorRestApiVersion);
+
+                                                }
+
+                                                request({
+                                                    method: "POST",
+                                                    url: monitorRestApiUrl,
+                                                    headers: {
+                                                        Authorization: token,
+                                                        companyinfo: format("{0}:{1}", JSON.parse(data.userinfo).tenant, JSON.parse(data.userinfo).company)
+                                                    }
+                                                }, function (_error, _response, datax) {
+                                                    //console.log(datax);
+                                                    if(datax && datax.IsSuccess){
+
+                                                        var res = {IsSuccess : false};
+                                                        callback(res);
+                                                        console.log(datax);
+                                                    }
+                                                    else{
+                                                        var res = {IsSuccess : false};
+                                                        callback(res);
+                                                        console.log(_error);
+                                                    }
+
+                                                });
                                                 console.log(_error);
+                                                j.cancel();
                                             }
 
 

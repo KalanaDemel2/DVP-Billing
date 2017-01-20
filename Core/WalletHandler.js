@@ -1291,7 +1291,6 @@ module.exports.LockCreditFromCustomer = function (req, res) {
 };
 
 module.exports.ReleaseCreditFromCustomer = function (req, res) {
-    console.log(req)
     if(req.body.Amount<=0){
         var jsonString = messageFormatter.FormatMessage(new Error("Invalid Details."), "EXCEPTION", false, undefined);
         logger.error('LockCreditFromCustomer -  [%s] .', jsonString);
