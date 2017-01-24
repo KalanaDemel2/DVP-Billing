@@ -29,7 +29,7 @@ function execute(req,res,next){
     var company =req.user.company;
     var tenant = req.user.tenant;
 
-    console.log({"Amount": amount, "Reason": req.body.name+':'+req.body.type, "name":req.body.userInfo.username});
+    console.log(req.body);
 
 
     var walletURL = format("http://{0}/DVP/API/{1}/PaymentManager/Customer/Wallet/Credit",  config.Services.walletServiceHost,  config.Services.walletServiceVersion);
