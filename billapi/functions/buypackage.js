@@ -29,7 +29,7 @@ function execute(req,res,next){
     var company =req.user.company;
     var tenant = req.user.tenant;
 
-    console.log(req.body)
+    console.log({"Amount": amount, "Reason": req.body.name+':'+req.body.type, "name":req.body.userInfo.username});
 
 
     var walletURL = format("http://{0}/DVP/API/{1}/PaymentManager/Customer/Wallet/Credit",  config.Services.walletServiceHost,  config.Services.walletServiceVersion);
@@ -44,6 +44,7 @@ function execute(req,res,next){
     var day  = date.getDate();
     var month  = date.getMonth();
     var year  = date.getYear();
+
 
 
     var remaining_days = 30-day;
