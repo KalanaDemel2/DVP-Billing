@@ -1137,7 +1137,7 @@ var LockCredit = function (sessionId,amount, invokeBy, reason, tenant, company) 
             lock(sessionId, ttl, function (done) {
                 var credit = parseFloat(wallet.Credit);
                 var lockCredit = parseFloat(wallet.LockCredit);
-                if (credit > amount) {
+                if (credit >= amount) {
                     credit = credit - amount;
                     lockCredit = lockCredit + amount;
                     DbConn.Wallet
