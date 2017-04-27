@@ -169,8 +169,8 @@ function bill(count){
                                         console.log("Super Users for tenant are \n"+superUserEmailArray);
 
                                         var sendObj = {
-                                            //"to" : superUserEmailArray,
-                                            "to" : "kalana@duosoftware.com",
+                                            "to" : superUserEmailArray,
+                                            //"to" : "kalana@duosoftware.com",
                                             "company": 0,
                                             "tenant": 1,
                                             "from" : "Billing",
