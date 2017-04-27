@@ -56,7 +56,11 @@ module.exports = {
         "reschedulefreqency": "BILLING_SCHEDULE_FREQUENCY",
         "rescheduletries": "BILLING_SCHEDULE_TRIES",
         "diameterDomain": "HOST_DIAMETERSERVER_NAME",
-        "diameterPort": "HOST_DIAMETERSERVER_PORT"
+        "diameterPort": "HOST_DIAMETERSERVER_PORT",
+		"tenantBilling" : "HOST_TENANTBILLING_ENABLED",
+        "userBilling" : "HOST_USERBILLING_ENABLED",
+        "TenantName": "HOST_TENANT_NAME"
+
 
     },
 

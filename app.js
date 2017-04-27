@@ -20,7 +20,10 @@ var server = restify.createServer({
   name: "DVP Billing Service"
 });
 
-
+process.on('uncaughtException',function(err){
+  logger.log("UNCAUGHT EXCEPTION")
+  logger.log(err.stack);
+});
 
 server.pre(restify.pre.userAgentConnection());
 server.use(restify.bodyParser({ mapParams: false }));
@@ -43,15 +46,12 @@ server.post('/DVP/API/:version/Billing/BuyPackage',authorization({resource:"bill
 server.post('/DVP/API/:version/Billing/updateRatings',authorization({resource:"billing", action:"write"}), ratings.updateRatings);
 
 
-if(config.Host.type === "http"){
-  server.listen(port, function () {
 
-    billing.bill();
-    logger.info("DVP-AutoAttendantService.main Server %s listening at %s", server.name, server.url);
+server.listen(port, function () {
 
-  });
-}
-else if(config.Host.type === "diameter") {
-  diameter.init();
-}
+  billing.bill();
+  logger.info("DVP-AutoAttendantService.main Server %s listening at %s", server.name, server.url);
+
+});
+
 

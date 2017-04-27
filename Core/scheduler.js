@@ -21,11 +21,12 @@ var callSessionValidator = require('../Control/callSessionValidator');
 
 
 var calls = [];
+var bills = [];
 
 function billing(){
 
     logger.info('billing is started...');
-    /*TODO : 1 .Get clients by batch
+    /*DONE : 1 .Get clients by batch
      *        2. Get amount due for the client by package service
      *        3. Call wallet service to see if client can pay
      *        4. if paid, Generate Invoice and email.  || else call recurrenceSchedulePayment
@@ -33,8 +34,16 @@ function billing(){
      *
      */
 
-    var billing = schedule.scheduleJob('1 0 1 1-12 *', function(){
-    //var billing = schedule.scheduleJob('30 01 10 30 11 *', function(){
+
+    /*TODO
+     *       Tenannt wise billing : 1 tenant has multiple Organization, those organizations should be
+     *       billed seperately and added in to one bill,
+     *       this should not contain wallet methods or account disabling methods
+     */
+
+
+    var billing = schedule.scheduleJob('1 0 28 1-12 *', function(){
+    //var billing = schedule.scheduleJob('0 * * 27 1-12 *', function(){
         console.log('billing is running...');
         bill(1);
     });
@@ -63,6 +72,7 @@ function bill(count){
         i = 0;
     }
 
+
     console.log('Getting '+i+'/'+50);
     request({
         method: "GET",
@@ -82,6 +92,7 @@ function bill(count){
         {
 
             var funArray = [];
+
             for (var index in datax.Result) {
                 //console.log(index)
                 funArray.push(billEach(datax.Result[index]).invoke);
@@ -95,9 +106,115 @@ function bill(count){
                         console.log('ERROR')
                     }
                     else if((datax.Result).length!=50){
-                        console.log('DONE')
+
+                        console.log('DONE');
+
+                        if(config.Host.tenantBilling){
+                            bills = bills.concat(results);
+                            console.log(bills.length);
+
+                            var formattedBills = [];
+
+                            for(var index in bills){
+                                if(bills.hasOwnProperty(index))
+                                if(bills[index]!=null && bills[index].hasOwnProperty("Parameters")){
+
+                                    for(var j in (bills[index].Parameters.billinginfo)){
+                                        var obj = {};
+                                        obj.Company = bills[index].Parameters.company;
+
+
+                                        var formatteddate = bills[index].Parameters.billinginfo[j].date,
+                                            delimiter = 'T',
+                                            start = 0,
+                                            tokens = formatteddate.split(delimiter).slice(start),
+                                            day = tokens[0];
+
+                                        obj.Date = day;
+                                        obj.Package = bills[index].Parameters.billinginfo[j].name;
+                                        obj.Amount = bills[index].Parameters.billinginfo[j].price;
+                                        formattedBills.push(obj);
+                                        //console.log(formattedBills);
+
+                                    }
+
+
+
+                                }
+                                if(index == bills.length -1){
+
+                                    //TODO : Get Super Users and send mail to all
+
+                                    var superUserUrl = format("http://{0}/DVP/API/{1}/Tenant/Monitoring/superUsers", config.Services.userServiceHost, config.Services.userServiceVersion);
+                                    if (validator.isIP(config.Services.userServiceHost))
+                                        usertURL = format("http://{0}:{1}/DVP/API/{2}/Tenant/Monitoring/superUsers", config.Services.userServiceHost, config.Services.userServicePort, config.Services.userServiceVersion);
+
+                                    request({
+                                        method: "GET",
+                                        url: superUserUrl,
+                                        headers: {
+                                            authorization: token,
+                                            companyinfo: format("{0}:{1}", 1, 103)
+                                        },
+                                        json: {}
+                                    }, function (_error, _response, datax) {
+
+
+                                        var superUserEmailArray = [];
+                                        var superUserslist= datax.Result;
+                                        for(var l in superUserslist){
+                                            superUserEmailArray.push(superUserslist[l].email.contact)
+                                        }
+
+                                        console.log("Super Users for tenant are \n"+superUserEmailArray);
+
+                                        var sendObj = {
+                                            //"to" : superUserEmailArray,
+                                            "to" : "kalana@duosoftware.com",
+                                            "company": 0,
+                                            "tenant": 1,
+                                            "from" : "Billing",
+                                            "subject" : "Billing",
+                                            "template" : "Tenant Billing"
+                                        };
+
+                                        var date = new Date();
+                                        var day = date.getDay(),
+                                            month = date.getMonth(),
+                                            year = date.getFullYear();
+
+                                        date = day + '-' + month + '-' + year;
+
+                                        var total = 0;
+
+                                        for ( var r in formattedBills){
+                                            total = total + formattedBills[r].Amount;
+                                        }
+
+                                        sendObj.Parameters =
+                                        {
+                                            "TenantName": config.Host.TenantName,
+                                            "BillingDate": date,
+                                            "PurchaseDetails": formattedBills,
+                                            "Total": total.toFixed(2)
+                                        };
+                                        PublishToQueue("EMAILOUT", sendObj);
+                                        bills = [];
+
+                                    });
+
+
+                                }
+                            }
+                        }
                     }
                     else{
+                        console.log('Starting Batch '+(i+1));
+
+                        if(config.Host.tenantBilling){
+                            console.log(results);
+                            bills = bills.concat(results);
+                        }
                         bill(i+1);
                     }
 
@@ -106,6 +223,7 @@ function bill(count){
 
 
         }
+
 
 
 
@@ -120,296 +238,616 @@ function billEach(datax){
     return {
         invoke : function (callback){
 
-            async.waterfall([
-                function (callback) {
+            //TODO :
+            // : all results should be sent as array to the next step
+            // : Disable all wallet ralated activities
+            // : Do not Disable account
+            // : Do not reschedule
+            // : Organization Bill Need All tenant details, One email for the entire Organization
+            // : Send to SuperUser Email
 
-                    //Get Company ID
-                    //console.log(datax);
-                    callback(null, datax.id);
-                },
-                function (userid, callback) {
-                    var relCompany = datax.id;
-                    var relTenant = datax.tenant;
-                    var email = datax.ownerId;
+            if(config.Host.userBilling){
 
-                    var usertURL = format("http://{0}/DVP/API/{1}/Organisation/billingInformation", config.Services.userServiceHost, config.Services.userServiceVersion);
-                    if (validator.isIP(config.Services.userServiceHost)) {
-                        usertURL = format("http://{0}:{1}/DVP/API/{2}/Organisation/billingInformation", config.Services.userServiceHost, config.Services.userServicePort, config.Services.userServiceVersion);
-                        //usertURL = format("http://192.168.5.175:{1}/DVP/API/{2}/Organisation/billingInformation", config.Services.userServiceHost, config.Services.userServicePort, config.Services.userServiceVersion);
-                    }
-                    request({
-                        method: "GET",
-                        url: usertURL,
-                        headers: {
-                            Authorization: token,
-                            companyinfo: format("{0}:{1}", relTenant, relCompany)
-                        },
-                        json: {}
-                    }, function (_error, _response, datax) {
-                        //console.log(datax.IsSuccess);
-                        if(datax && (datax.Result).length != 0){
-                            var user_packages = datax.Result;
+                //console.log('Executing User Billing ')
 
-                            var amount = 0;
-                            for (var individualAmount in user_packages) {
-                                if (!user_packages[individualAmount].isTrial) {
-                                    amount = amount + (user_packages[individualAmount].unitPrice * user_packages[individualAmount].units);
-                                }
-                                if (individualAmount == user_packages.length - 1) {
-                                    //console.log(userid+' '+amount);
-                                    callback(null, userid, amount, datax.Result, email);
+                async.waterfall([
+                    function (callback) {
+
+                        //Get Company ID
+                        //console.log(datax);
+                        callback(null, datax.id);
+                    },
+                    function (userid, callback) {
+
+                        var relCompany = datax.id;
+                        var relTenant = datax.tenant;
+                        var email = datax.ownerId;
+
+                        var usertURL = format("http://{0}/DVP/API/{1}/Organisation/billingInformation", config.Services.userServiceHost, config.Services.userServiceVersion);
+                        if (validator.isIP(config.Services.userServiceHost)) {
+                            usertURL = format("http://{0}:{1}/DVP/API/{2}/Organisation/billingInformation", config.Services.userServiceHost, config.Services.userServicePort, config.Services.userServiceVersion);
+                            //usertURL = format("http://192.168.5.175:{1}/DVP/API/{2}/Organisation/billingInformation", config.Services.userServiceHost, config.Services.userServicePort, config.Services.userServiceVersion);
+                        }
+                        request({
+                            method: "GET",
+                            url: usertURL,
+                            headers: {
+                                Authorization: token,
+                                companyinfo: format("{0}:{1}", relTenant, relCompany)
+                            },
+                            json: {}
+                        }, function (_error, _response, datax) {
+
+                            if(datax && (datax.Result).length != 0){
+                                var user_packages = datax.Result;
+
+                                var amount = 0;
+                                for (var individualAmount in user_packages) {
+                                    if (!user_packages[individualAmount].isTrial) {
+                                        amount = amount + (user_packages[individualAmount].unitPrice * user_packages[individualAmount].units);
+                                    }
+                                    if (individualAmount == user_packages.length - 1) {
+                                        //console.log(userid+' '+amount);
+                                        callback(null, userid, amount, datax.Result, email);
+                                    }
                                 }
                             }
+                            else if(datax){
+                                callback(null, userid, 0, datax.Result, email);
+                                //console.log('No Packages available')
+                            }
+                            else if(_error){
+                                console.log(_error)
+                            }
+                            else{
+                                callback(null, userid, 0, [], email);
+                                //console.log('Package Service issue')
+                            }
+
+
+
+                        });
+
+
+                    },
+                    function (userid, amount, packageDetails, email, callback) {
+                        var relCompany = datax.id;
+                        var relTenant = datax.tenant;
+
+
+
+                        var formattedPackgeDetatils = [];
+
+                        if(packageDetails.length!=0)
+                            for(var index in formattedPackgeDetatils){
+
+                                var obj = {};
+                                obj.name = packageDetails[index].name;
+                                obj.type = packageDetails[index].type;
+                                obj.category = packageDetails[index].category;
+                                obj.unitPrice = packageDetails[index].unitPrice;
+                                obj.units = packageDetails[index].units;
+                                obj.price = packageDetails[index].units * packageDetails[index].unitPrice;
+
+                                formattedPackgeDetatils.push(obj);
+
+                            }
+
+                        //console.log(formattedPackgeDetatils);
+                        // call wallet deduction with amount
+                        var walletURL = format("http://{0}/DVP/API/{1}/PaymentManager/Customer/Wallet/Credit", config.Services.walletServiceHost, config.Services.walletServiceVersion);
+
+
+                        if (validator.isIP(config.Services.walletServiceHost)) {
+                            walletURL = format("http://{0}:{1}/DVP/API/{2}/PaymentManager/Customer/Wallet/Credit", config.Services.walletServiceHost, config.Services.walletServicePort, config.Services.walletServiceVersion);
+                            //walletURL = format("http://{0}:{1}/DVP/API/{2}/PaymentManager/Customer/Wallet/Credit", 'localhost', "3333", config.Services.walletServiceVersion);
+
                         }
-                        else if(datax){
-                            callback(null, userid, 0, datax.Result, email);
-                            //console.log('No Packages available')
-                        }
-                        else{
-                            callback(null, userid, 0, [], email);
-                            //console.log('Package Service issue')
-                        }
+                        //walletURL = format("http://{0}:{1}/DVP/API/{2}/PaymentManager/Customer/Wallet/Credit", config.Services.walletServiceHost, config.Services.walletServicePort, config.Services.walletServiceVersion);
+
+
+                        request({
+                            method: "PUT",
+                            url: walletURL,
+                            headers: {
+                                Authorization: token,
+                                companyinfo: format("{0}:{1}", relTenant , relCompany)
+                            },
+                            json: {"Amount": amount, "Reason": "Billing for the month"}
+                        }, function (_error, _response, datax) {
+                            //console.log(email);
+                            if (datax && datax.IsSuccess) {
 
 
 
-                    });
+                                var date = new Date();
+                                var month  = date.getMonth();
 
-
-                },
-                function (userid, amount, packageDetails, email, callback) {
-                    var relCompany = datax.id;
-                    var relTenant = datax.tenant;
-
-
-
-                    var formattedPackgeDetatils = [];
-
-                    if(packageDetails.length!=0)
-                    for(var index in formattedPackgeDetatils){
-
-                        var obj = {};
-                        obj.name = packageDetails[index].name;
-                        obj.type = packageDetails[index].type;
-                        obj.category = packageDetails[index].category;
-                        obj.unitPrice = packageDetails[index].unitPrice;
-                        obj.units = packageDetails[index].units;
-                        obj.price = packageDetails[index].units * packageDetails[index].unitPrice;
-
-                        formattedPackgeDetatils.push(obj);
-
-                    }
-
-                    //console.log(formattedPackgeDetatils);
-                    // call wallet deduction with amount
-                    var walletURL = format("http://{0}/DVP/API/{1}/PaymentManager/Customer/Wallet/Credit", config.Services.walletServiceHost, config.Services.walletServiceVersion);
-
-
-                    if (validator.isIP(config.Services.walletServiceHost)) {
-                        walletURL = format("http://{0}:{1}/DVP/API/{2}/PaymentManager/Customer/Wallet/Credit", config.Services.walletServiceHost, config.Services.walletServicePort, config.Services.walletServiceVersion);
-                        //walletURL = format("http://{0}:{1}/DVP/API/{2}/PaymentManager/Customer/Wallet/Credit", 'localhost', "3333", config.Services.walletServiceVersion);
-
-                    }
-                    //walletURL = format("http://{0}:{1}/DVP/API/{2}/PaymentManager/Customer/Wallet/Credit", config.Services.walletServiceHost, config.Services.walletServicePort, config.Services.walletServiceVersion);
-
-
-                    request({
-                        method: "PUT",
-                        url: walletURL,
-                        headers: {
-                            Authorization: token,
-                            companyinfo: format("{0}:{1}", relTenant , relCompany)
-                        },
-                        json: {"Amount": amount, "Reason": "Billing for the month"}
-                    }, function (_error, _response, datax) {
-                        //console.log(email);
-                        if (datax && datax.IsSuccess) {
+                                //Save to Database
+                                var customer = {};
+                                customer.customer = relCompany.toString();
+                                customer.email = email;
+                                customer.status = true;
+                                customer.subscriptions = JSON.stringify(formattedPackgeDetatils);
+                                customer.tenant = parseInt(relTenant);
+                                customer.company = parseInt(relCompany);
+                                customer.cycle = month.toString();
+                                customer.data = [];
+                                var obj = {};
+                                obj[month] = formattedPackgeDetatils;
+                                customer.data.push(obj);
 
 
 
-                            var date = new Date();
-                            var month  = date.getMonth();
+                                DBconn.CustomerCycleById(customer, function(err,obj){
 
-                            //Save to Database
-                            var customer = {};
-                            customer.customer = relCompany.toString();
-                            customer.email = email;
-                            customer.status = true;
-                            customer.subscriptions = JSON.stringify(formattedPackgeDetatils);
-                            customer.tenant = parseInt(relTenant);
-                            customer.company = parseInt(relCompany);
-                            customer.cycle = month.toString();
-                            customer.data = [];
-                            var obj = {};
-                            obj[month] = formattedPackgeDetatils;
-                            customer.data.push(obj);
+                                    if(err){
+                                        console.log(err);
 
 
+                                    }
+                                    else {
 
-                            DBconn.CustomerCycleById(customer, function(err,obj){
+                                        if(!JSON.parse(obj).IsSuccess){
+                                            console.log('New Record Created');
+                                            DBconn.CreateCustomerBillRecord(customer, function(err,obj){
+                                                if(err){
 
-                                if(err){
-                                    console.log(err);
+                                                    var jsonString = messageFormatter.FormatMessage(err, "EXCEPTION", true, customer);
+                                                    //res.end(jsonString);
+                                                }
+                                                else{
+                                                    var sendObj = {
+                                                        "company": 0,
+                                                        "tenant": 1
+                                                    };
+
+                                                    var date = new Date();
+                                                    var month = date.getMonth();
+                                                    var year = date.getYear();
+
+                                                    if(amount!=0){
+                                                        sendObj.to =  email;
+                                                        //sendObj.to =  "kalana@duosoftware.com";
+                                                        sendObj.from = "Billing";
+                                                        sendObj.subject = "Billing";
+                                                        sendObj.template = "Billing Information";
+                                                        sendObj.Parameters =
+                                                        {
+                                                            username:email,
+                                                            totalbill:amount,
+                                                            id:tenant+"."+company+"."+month+"."+year,
+                                                            created_at:date,
+                                                            company : '',
+                                                            owner : '',
+                                                            mail : email,
+                                                            billinginfo:formattedPackgeDetatils
+                                                        };
+                                                        //sendObj.attachments = [{name:name, url:url}]
+
+                                                        PublishToQueue("EMAILOUT", sendObj);
 
 
-                                }
-                                else {
+                                                    }
 
-                                    if(!JSON.parse(obj).IsSuccess){
-                                        console.log('New Record Created');
-                                        DBconn.CreateCustomerBillRecord(customer, function(err,obj){
-                                            if(err){
 
-                                                var jsonString = messageFormatter.FormatMessage(err, "EXCEPTION", true, customer);
-                                                //res.end(jsonString);
+                                                    //var jsonString = messageFormatter.FormatMessage(undefined, "EXCEPTION", true, obj);
+                                                    //res.end(jsonString);
+                                                }
+                                            });
+                                        }
+                                        else if(parseInt(JSON.parse(obj).Result.Cycle) > month){
+                                            console.log('Old Record Updated');
+                                            var object = JSON.parse(obj);
+                                            if(object.Result.OtherJsonData !=null){
+                                                var actualJson = object.Result.OtherJsonData;
+                                                var obj = {};
+                                                obj[month] = formattedPackgeDetatils;
+                                                actualJson.push(obj);
+                                                customer.data = actualJson;
                                             }
                                             else{
-                                                var sendObj = {
-                                                    "company": 0,
-                                                    "tenant": 1
-                                                };
-
-                                                var date = new Date();
-                                                var month = date.getMonth();
-                                                var year = date.getYear();
-
-                                                if(amount!=0){
-                                                    sendObj.to =  email;
-                                                    //sendObj.to =  "kalana@duosoftware.com";
-                                                    sendObj.from = "Billing";
-                                                    sendObj.subject = "Billing";
-                                                    sendObj.template = "Billing Information";
-                                                    sendObj.Parameters =
-                                                    {
-                                                        username:email,
-                                                        totalbill:amount,
-                                                        id:tenant+"."+company+"."+month+"."+year,
-                                                        created_at:date,
-                                                        company : '',
-                                                        owner : '',
-                                                        mail : email,
-                                                        billinginfo:formattedPackgeDetatils
-                                                    };
-                                                    //sendObj.attachments = [{name:name, url:url}]
-
-                                                    PublishToQueue("EMAILOUT", sendObj);
-
-
-                                                }
-
-
-                                                //var jsonString = messageFormatter.FormatMessage(undefined, "EXCEPTION", true, obj);
-                                                //res.end(jsonString);
+                                                var obj = {};
+                                                obj[month] = formattedPackgeDetatils;
+                                                customer.data = obj;
                                             }
-                                        });
-                                    }
-                                    else if(parseInt(JSON.parse(obj).Result.Cycle) > month){
-                                        console.log('Old Record Updated');
-                                        var object = JSON.parse(obj);
-                                        if(object.Result.OtherJsonData !=null){
-                                            var actualJson = object.Result.OtherJsonData;
-                                            var obj = {};
-                                            obj[month] = formattedPackgeDetatils;
-                                            actualJson.push(obj);
-                                            customer.data = actualJson;
+
+
+                                            DBconn.UpdateCustomerBillRecord(customer, function(err,obj){
+                                                if(err){
+                                                    var jsonString = messageFormatter.FormatMessage(err, "EXCEPTION", false, customer);
+                                                    //res.end(jsonString);
+                                                }
+                                                else{
+
+                                                    var sendObj = {
+                                                        "company": 0,
+                                                        "tenant": 1
+                                                    };
+
+                                                    var date = new Date();
+                                                    var month = date.getMonth();
+                                                    var year = date.getYear();
+
+                                                    if(amount!=0){
+                                                        sendObj.to =  email;
+                                                        //sendObj.to =  "kalana@duosoftware.com";
+                                                        sendObj.from = "Billing";
+                                                        sendObj.subject = "Billing";
+                                                        sendObj.template = "Billing Information";
+                                                        sendObj.Parameters =
+                                                        {
+                                                            username:email,
+                                                            totalbill:amount,
+                                                            id:tenant+"."+company+"."+month+"."+year,
+                                                            created_at:date,
+                                                            company : '',
+                                                            owner : '',
+                                                            mail : email,
+                                                            billinginfo:formattedPackgeDetatils
+                                                        };
+                                                        //sendObj.attachments = [{name:name, url:url}]
+
+                                                        PublishToQueue("EMAILOUT", sendObj);
+
+
+                                                    }
+                                                    console.log('Billing Successful');
+                                                    var message = msg.FormatMessage(undefined, "Package bought", true, obj);
+                                                    logger.info('[BUY PACKAGE]:SUCCESS - %s ', JSON.stringify(obj));
+                                                    //res.write(message);
+                                                    //res.end();
+                                                }
+                                            });
                                         }
                                         else{
-                                            var obj = {};
-                                            obj[month] = formattedPackgeDetatils;
-                                            customer.data = obj;
+                                            console.log('Already Billed');
                                         }
 
+                                    }
 
-                                        DBconn.UpdateCustomerBillRecord(customer, function(err,obj){
-                                            if(err){
-                                                var jsonString = messageFormatter.FormatMessage(err, "EXCEPTION", false, customer);
-                                                //res.end(jsonString);
+                                });
+                                callback(null, datax);
+
+                            }
+                            else {
+                                //console.log('Billing Unsuccessful, rescheduling billing');
+                                var data= {};
+                                data.count = 0;
+                                data.company = relCompany;
+                                data.tenant = relTenant;
+                                data.amount = amount;
+                                data.email = email;
+                                data.formattedPackgeDetatils = formattedPackgeDetatils;
+                                //console.log(data);
+                                recurrenceSchedulePayment(data);
+                                callback(null, datax);
+                            }
+
+
+                        });
+
+
+                    }
+                ], function (err, result) {
+                    if(err==null){
+
+                        //console.log('Cycle Complete');
+
+                    }
+                    callback(null);
+
+                });
+
+            }
+            if(config.Host.tenantBilling){
+                //console.log("Executing tenant billing")
+                async.waterfall([
+                    function (callback) {
+
+                        //Get Company ID
+                        //console.log(datax);
+                        callback(null, datax.id);
+                    },
+                    function (userid, callback) {
+
+                        var relCompany = datax.id;
+                        var relTenant = datax.tenant;
+                        var email = datax.ownerId;
+
+                        var usertURL = format("http://{0}/DVP/API/{1}/Organisation/billingInformation", config.Services.userServiceHost, config.Services.userServiceVersion);
+                        if (validator.isIP(config.Services.userServiceHost)) {
+                            usertURL = format("http://{0}:{1}/DVP/API/{2}/Organisation/billingInformation", config.Services.userServiceHost, config.Services.userServicePort, config.Services.userServiceVersion);
+                            //usertURL = format("http://192.168.5.175:{1}/DVP/API/{2}/Organisation/billingInformation", config.Services.userServiceHost, config.Services.userServicePort, config.Services.userServiceVersion);
+                        }
+                        request({
+                            method: "GET",
+                            url: usertURL,
+                            headers: {
+                                Authorization: token,
+                                companyinfo: format("{0}:{1}", relTenant, relCompany)
+                            },
+                            json: {}
+                        }, function (_error, _response, datax) {
+
+                            if(datax && (datax.Result).length != 0){
+                                var user_packages = datax.Result;
+
+                                var amount = 0;
+                                for (var individualAmount in user_packages) {
+                                    if (!user_packages[individualAmount].isTrial) {
+                                        amount = amount + (user_packages[individualAmount].unitPrice * user_packages[individualAmount].units);
+                                    }
+                                    if (individualAmount == user_packages.length - 1) {
+                                        //console.log(userid+' '+amount);
+                                        callback(null, userid, amount, datax.Result, email);
+                                    }
+                                }
+                            }
+                            else if(datax){
+                                callback(null, userid, 0, datax.Result, email);
+                                //console.log('No Packages available')
+                            }
+                            else if(_error){
+                                console.log(_error)
+                            }
+                            else{
+                                callback(null, userid, 0, [], email);
+                                //console.log('Package Service issue')
+                            }
+
+
+
+                        });
+
+
+                    },
+                    function (userid, amount, packageDetails, email, callback) {
+                        var relCompany = datax.id;
+                        var relTenant = datax.tenant;
+
+                        var formattedPackgeDetatils = [];
+
+                        if(packageDetails.length!=0){
+                            for(var index in packageDetails){
+                                var obj = {};
+                                obj.name = packageDetails[index].name;
+                                obj.type = packageDetails[index].type;
+                                obj.category = packageDetails[index].category;
+                                obj.unitPrice = packageDetails[index].unitPrice;
+                                obj.units = packageDetails[index].units;
+                                obj.date =  packageDetails[index].date;
+                                obj.price = packageDetails[index].units * packageDetails[index].unitPrice;
+
+                                formattedPackgeDetatils.push(obj);
+                            }
+
+
+                        }
+
+
+
+
+                        var date = new Date();
+                        var month  = date.getMonth();
+
+                        //Save to Database
+                        var customer = {};
+                        customer.customer = relCompany.toString();
+                        customer.email = email;
+                        customer.status = true;
+                        customer.subscriptions = JSON.stringify(formattedPackgeDetatils);
+                        customer.tenant = parseInt(relTenant);
+                        customer.company = parseInt(relCompany);
+                        customer.cycle = month.toString();
+                        customer.data = [];
+                        customer.data = [];
+                        var pushobj = {};
+                        pushobj[month] = formattedPackgeDetatils;
+                        customer.data.push(pushobj);
+                        //console.log('This is formatted package: '+JSON.stringify(formattedPackgeDetatils));
+
+                        DBconn.CustomerCycleById(customer, function(err,obj){
+                            //console.log('This is formatted customer package: '+JSON.stringify(pushobj[month]));
+
+                            if(err){
+                                console.log(err);
+
+                            }
+                            else {
+
+                                if(!JSON.parse(obj).IsSuccess){
+                                    console.log('New Record Created');
+                                    DBconn.CreateCustomerBillRecord(customer, function(err,object){
+                                        if(err){
+
+                                            var jsonString = messageFormatter.FormatMessage(err, "EXCEPTION", true, customer);
+                                            callback(null, null);
+                                        }
+                                        else{
+                                            var sendObj = {
+                                                "company": 0,
+                                                "tenant": 1
+                                            };
+
+                                            var date = new Date();
+                                            var month = date.getMonth();
+                                            var year = date.getYear();
+
+                                            if(amount!=0){
+
+                                                console.log(packageDetails);
+
+                                                sendObj.to =  email;
+                                                //sendObj.to =  "kalana@duosoftware.com";
+                                                sendObj.from = "Billing";
+                                                sendObj.subject = "Billing";
+                                                sendObj.template = "Billing Information";
+                                                sendObj.Parameters =
+                                                {
+                                                    username:email,
+                                                    totalbill:amount.toFixed(2),
+                                                    id:relTenant+"."+relCompany+"."+month+"."+year,
+                                                    created_at:date,
+                                                    company : relCompany,
+                                                    owner : '',
+                                                    mail : email,
+                                                    billinginfo:pushobj[month]
+                                                };
+                                                //sendObj.attachments = [{name:name, url:url}]
+                                                callback(null, sendObj);
+                                                //PublishToQueue("EMAILOUT", sendObj);
+                                                //bill.push({"tenant":relTenant,"body":sendObj});
+
+
                                             }
                                             else{
-
-                                                var sendObj = {
-                                                    "company": 0,
-                                                    "tenant": 1
-                                                };
-
-                                                var date = new Date();
-                                                var month = date.getMonth();
-                                                var year = date.getYear();
-
-                                                if(amount!=0){
-                                                    sendObj.to =  email;
-                                                    //sendObj.to =  "kalana@duosoftware.com";
-                                                    sendObj.from = "Billing";
-                                                    sendObj.subject = "Billing";
-                                                    sendObj.template = "Billing Information";
-                                                    sendObj.Parameters =
-                                                    {
-                                                        username:email,
-                                                        totalbill:amount,
-                                                        id:tenant+"."+company+"."+month+"."+year,
-                                                        created_at:date,
-                                                        company : '',
-                                                        owner : '',
-                                                        mail : email,
-                                                        billinginfo:formattedPackgeDetatils
-                                                    };
-                                                    //sendObj.attachments = [{name:name, url:url}]
-
-                                                    PublishToQueue("EMAILOUT", sendObj);
-
-
-                                                }
-                                                console.log('Billing Successful');
-                                                var message = msg.FormatMessage(undefined, "Package bought", true, obj);
-                                                logger.info('[BUY PACKAGE]:SUCCESS - %s ', JSON.stringify(obj));
-                                                //res.write(message);
-                                                //res.end();
+                                                callback(null, null);
                                             }
-                                        });
+
+
+                                            //var jsonString = messageFormatter.FormatMessage(undefined, "EXCEPTION", true, obj);
+                                            //res.end(jsonString);
+                                        }
+                                    });
+
+                                    //callback(null, datax);
+                                }
+                                else if(parseInt(JSON.parse(obj).Result.Cycle) < month){
+
+                                    console.log('First Billing: '+JSON.parse(obj).Result.FirstBilling+' Package length :'+packageDetails.length);
+
+                                    if(JSON.parse(obj).Result.FirstBilling){
+                                        var formattedPackgeDetatils = [];
+                                        if(packageDetails.length!=0){
+
+                                            var date = JSON.parse(obj).Result.BuyDate;
+                                            //date= date.toDateString;
+                                            //Get date out of the string
+
+
+                                            if(date == null){
+                                                date = new Date();
+                                                date = date.toString();
+                                            }
+                                            var str = date,
+                                                delimiter = ' ',
+                                                start = 2,
+                                                tokens = str.split(delimiter).slice(start),
+                                                day = tokens[0];
+
+                                            console.log('Bought Day is : '+ day);
+
+                                            if(day ==31 || day == 30){
+                                                day == 29
+                                            }
+
+
+
+                                            for(var k in packageDetails){
+                                                var newObj = {};
+                                                newObj.name = packageDetails[k].name;
+                                                newObj.type = packageDetails[k].type;
+                                                newObj.category = packageDetails[k].category;
+                                                newObj.unitPrice = packageDetails[k].unitPrice;
+                                                newObj.date =  packageDetails[index].date;
+                                                newObj.units = packageDetails[k].units;
+                                                newObj.price = ((packageDetails[k].units * packageDetails[k].unitPrice) * (30-day)).toFixed(2);
+
+                                                formattedPackgeDetatils.push(newObj);
+                                            }
+
+
+                                            console.log('First Billing... amount : '+ newObj.price);
+                                            console.log(newObj)
+
+                                        }
+                                    }
+
+                                    console.log('Old Record Updated '+JSON.parse(obj).Result.Cycle +' '+month);
+                                    var object = JSON.parse(obj);
+                                    if(object.Result.OtherJsonData !=null){
+                                        var actualJson = object.Result.OtherJsonData;
+                                        var obj = {};
+                                        obj[month] = formattedPackgeDetatils;
+                                        actualJson.push(obj);
+                                        customer.data = actualJson;
                                     }
                                     else{
-                                        console.log('Already Billed');
+                                        var obj = {};
+                                        obj[month] = formattedPackgeDetatils;
+                                        customer.data = obj;
                                     }
+
+                                    DBconn.UpdateCustomerBillRecord(customer, function(err,obj){
+                                        if(err){
+                                            var jsonString = messageFormatter.FormatMessage(err, "EXCEPTION", false, customer);
+                                            callback(null, null);
+                                        }
+                                        else{
+
+
+                                            var sendObj = {
+                                                "company": 0,
+                                                "tenant": 1
+                                            };
+
+                                            var date = new Date();
+                                            var month = date.getMonth();
+                                            var year = date.getYear();
+
+                                            if(amount!=0){
+                                                sendObj.to =  email;
+                                                //sendObj.to =  "kalana@duosoftware.com";
+                                                sendObj.from = "Billing";
+                                                sendObj.subject = "Billing";
+                                                sendObj.template = "Billing Information";
+                                                sendObj.Parameters =
+                                                {
+                                                    username:email,
+                                                    totalbill:amount.toFixed(2),
+                                                    id:relTenant+"."+relCompany+"."+month+"."+year,
+                                                    created_at:date,
+                                                    company : '',
+                                                    owner : '',
+                                                    mail : email,
+                                                    billinginfo:pushobj[month]
+                                                };
+                                                //sendObj.attachments = [{name:name, url:url}]
+
+                                                //PublishToQueue("EMAILOUT", sendObj);
+
+                                            }
+                                            console.log('Billing Successful');
+                                            var message = msg.FormatMessage(undefined, "Package bought", true, obj);
+
+                                            callback(null, sendObj);
+                                        }
+                                    });
+                                }
+                                else{
+                                    console.log('Already Billed');
+                                    callback(null, null);
 
                                 }
 
-                            });
-                            callback(null, datax);
+                            }
 
-                        }
-                        else {
-                            //console.log('Billing Unsuccessful, rescheduling billing');
-                            var data= {};
-                            data.count = 0;
-                            data.company = relCompany;
-                            data.tenant = relTenant;
-                            data.amount = amount;
-                            data.email = email;
-                            data.formattedPackgeDetatils = formattedPackgeDetatils;
-                            //console.log(data);
-                            recurrenceSchedulePayment(data);
-                            callback(null, datax);
+                        });
 
 
+                    }
+                ], function (err, result) {
+                    if(err==null){
+                        //console.log('Cycle Complete');
+                    }
+                    callback(null,result);
 
-                        }
+                });
+            }
 
-
-                    });
-
-
-                }
-            ], function (err, result) {
-                if(err==null){
-
-                    //console.log('Cycle Complete');
-
-                }
-                callback(null);
-
-            });
         }
     }
-
 
 }
 
@@ -555,9 +993,6 @@ function recurrenceSchedulePayment(data){
 
 
 
-
-
-
 }
 
 
@@ -636,7 +1071,7 @@ function callBilling(data){
                                         }
                                         else if(datax && !datax.IsSuccess){
 
-
+                                            console.log(datax);
                                             var monitorRestApiUrl = format('http://{0}/DVP/API/{1}/MonitorRestAPI/Dispatch/'+JSON.parse(data.userinfo).csid+'/disconnect', config.Services.monitorRestApiHost, config.Services.monitorRestApiVersion);
                                             if (validator.isIP(config.Services.walletServiceHost)) {
                                                 monitorRestApiUrl = format('http://{0}/DVP/API/{1}/MonitorRestAPI/Dispatch/'+JSON.parse(data.userinfo).csid+'/disconnect', config.Services.monitorRestApiHost, config.Services.monitorRestApiPort, config.Services.monitorRestApiVersion);
