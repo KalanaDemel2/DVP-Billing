@@ -301,7 +301,7 @@ function execute(req,res,next){
                 else{
                     var obj = {};
                     console.log('Old Record Updated');
-                    //var object = JSON.parse(obj);
+                    var object = obj;
                     if(object.Result.OtherJsonData !=null){
                         var actualJson = object.Result.OtherJsonData;
                         obj = {};
