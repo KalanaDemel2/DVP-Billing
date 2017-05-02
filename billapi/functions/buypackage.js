@@ -302,7 +302,7 @@ function execute(req,res,next){
                     //var obj = {};
                     console.log('Old Record Updated');
                     var object = JSON.parse(obj);
-                    if(object.Result.OtherJsonData !=null){
+                    if(object.Result !=undefined && object.Result.OtherJsonData !=null){
                         var actualJson = object.Result.OtherJsonData;
                         obj = {};
                         obj[month] = packgedetails;
