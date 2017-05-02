@@ -50,7 +50,7 @@ server.post('/DVP/API/:version/Billing/updateRatings',authorization({resource:"b
 server.listen(port, function () {
 
   billing.bill();
-  logger.info("DVP-AutoAttendantService.main Server %s listening at %s", server.name, server.url);
+  logger.info("DVP-Billingservice.main Server %s listening at %s", server.name, server.url);
 
 });
 
