@@ -299,9 +299,9 @@ function execute(req,res,next){
                     });
                 }
                 else{
-                    var obj = {};
+                    //var obj = {};
                     console.log('Old Record Updated');
-                    var object = obj;
+                    var object = JSON.parse(obj);
                     if(object.Result.OtherJsonData !=null){
                         var actualJson = object.Result.OtherJsonData;
                         obj = {};
