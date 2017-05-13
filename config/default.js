@@ -12,13 +12,12 @@ module.exports = {
     },
 
 
-    "Redis":
-    {
+    "Redis": {
         "ip": "45.55.142.207",
         "port": 6389,
-        "user": "duo",
-        "password": "DuoS123"
-
+        "password":"DuoS123",
+        "redisdb":0,
+        "ttl":30000
     },
 
 
@@ -33,12 +32,18 @@ module.exports = {
 
     "Host":
     {
+        "type" : "http",
         "vdomain": "localhost",
         "domain": "localhost",
         "port": "4444",
         "version": "1.0.0.0",
         "reschedulefreqency": "1",
-        "rescheduletries": "3"
+        "rescheduletries": "3",
+        "diameterDomain": "localhost",
+        "diameterPort": "5555",
+		"tenantBilling" : true,
+        "userBilling" : false,
+        "TenantName": "Dialog"
     },
 
     "LBServer" : {
@@ -64,7 +69,7 @@ module.exports = {
         "dbname":"dvpdb",
         "password":"DuoS123",
         "user":"duo"
-},
+    },
 
     "Services" : {
         "accessToken":"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdWtpdGhhIiwianRpIjoiYWEzOGRmZWYtNDFhOC00MWUyLTgwMzktOTJjZTY0YjM4ZDFmIiwic3ViIjoiNTZhOWU3NTlmYjA3MTkwN2EwMDAwMDAxMjVkOWU4MGI1YzdjNGY5ODQ2NmY5MjExNzk2ZWJmNDMiLCJleHAiOjE5MDIzODExMTgsInRlbmFudCI6LTEsImNvbXBhbnkiOi0xLCJzY29wZSI6W3sicmVzb3VyY2UiOiJhbGwiLCJhY3Rpb25zIjoiYWxsIn1dLCJpYXQiOjE0NzAzODExMTh9.Gmlu00Uj66Fzts-w6qEwNUz46XYGzE8wHUhAJOFtiRo",
@@ -77,9 +82,12 @@ module.exports = {
         "userServiceVersion": "1.0.0.0",
         //"walletServiceHost": "127.0.0.1",
         //"walletServiceHost": "192.168.0.39",
-        "walletServiceHost": "127.0.0.1",
+        "walletServiceHost": "walletservice.app.veery.cloud",
         "walletServicePort": "3333",
-        "walletServiceVersion": "1.0.0.0"
+        "walletServiceVersion": "1.0.0.0",
+        "monitorRestApiHost": "monitorrestapi.app.veery.cloud",
+        "monitorRestApiPort": "",
+        "monitorRestApiVersion": "1.0.0.0"
 
 
     }

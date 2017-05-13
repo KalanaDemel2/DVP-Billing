@@ -12,5 +12,5 @@ RUN git clone git://github.com/DuoSoftware/DVP-Billing.git /usr/local/src/billin
 RUN cd /usr/local/src/billingservice;
 WORKDIR /usr/local/src/billingservice
 RUN npm install
-EXPOSE 8881
+EXPOSE 8881 5555
 CMD [ "node", "/usr/local/src/billingservice/app.js" ]
