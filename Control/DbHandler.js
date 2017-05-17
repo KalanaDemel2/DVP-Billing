@@ -23,6 +23,8 @@ module.exports.CreateCustomerBillRecord = function (customer, callback) {
                 CompanyId: customer.company,
                 Status:customer.Status,
                 OtherJsonData:customer.data,
+                FirstBilling : customer.firstbilling,
+                BuyDate : customer.buydate,
                 createdAt: datetime,
                 updatedAt:datetime
             }
@@ -36,12 +38,18 @@ module.exports.CreateCustomerBillRecord = function (customer, callback) {
 
 module.exports.UpdateCustomerBillRecord = function (customer, callback) {
     var datetime = new Date();
+    if(!customer.firstbilling){
+        customer.firstbilling = null;
+    }
     DbConn.CustomerBillRecord
         .update(
             {
-                lastBillCycle: customer.cycle,
+                Cycle: customer.cycle,
                 updatedAt:datetime,
-                OtherJsonData:customer.data
+                OtherJsonData:customer.data,
+                FirstBilling  : customer.firstbilling,
+                BuyDate : customer.buydate
+
             }
             ,
             {
@@ -65,6 +73,8 @@ module.exports.CustomerCycleById = function (customer, res) {
             var data = {
                 "CompanyId": CustomerBillRecord.CompanyId,
                 "Cycle": CustomerBillRecord.Cycle,
+                "FirstBilling" : CustomerBillRecord.FirstBilling,
+                "BuyDate" : CustomerBillRecord.BuyDate,
                 "OtherJsonData" : CustomerBillRecord.OtherJsonData
             };
             jsonString = messageFormatter.FormatMessage(undefined, "EXCEPTION", true, data);
@@ -73,12 +83,46 @@ module.exports.CustomerCycleById = function (customer, res) {
             jsonString = messageFormatter.FormatMessage(undefined, "EXCEPTION", false, 0);
         }
 
-        logger.info('CreditBalance -  Billing - [%s] .', jsonString);
+        logger.info('[CustomerCycleById] -  Billing - [%s] .', jsonString);
         res(null,jsonString);
     }).error(function (err) {
         var jsonString = messageFormatter.FormatMessage(err, "EXCEPTION", false, undefined);
-        logger.error('[CreditBalance] - [%s] ', jsonString);
+        logger.error('[CustomerCycleById] - [%s] ', jsonString);
         res(err,jsonString);
     });
 };
 
+/*-------------- Channel Master Data --------------------*/
+module.exports.CreateRatingRecord = function (provider, data, callback) {
+    //console.log(provider)
+    DbConn.CallRatings
+        .upsert(
+            {
+                Provider : provider,
+                PaymentData : data
+            }
+        ).then(function (cmp) {
+        callback(undefined, cmp);
+    }).error(function (err) {
+        callback(err, undefined);
+    });
+};
+
+module.exports.getRatingRecords = function (res) {
+    DbConn.CallRatings
+        .findAll({}).then(function (CallRatings) {
+        var jsonString = messageFormatter.FormatMessage(undefined, "EXCEPTION", true, 0);
+        if (CallRatings) {
+            var data = CallRatings;
+            jsonString = messageFormatter.FormatMessage(undefined, "EXCEPTION", true, data);
+        }
+        else {
+            jsonString = messageFormatter.FormatMessage(undefined, "EXCEPTION", false, 0);
+        }
+        res(null,jsonString);
+    }).error(function (err) {
+        var jsonString = messageFormatter.FormatMessage(err, "EXCEPTION", false, undefined);
+
+        res(err,jsonString);
+    });
+};

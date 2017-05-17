@@ -48,12 +48,20 @@ module.exports = {
 
     "Host":
     {
+        "type" : "HOST_TYPE",
         "vdomain": "LB_FRONTEND",
         "domain": "HOST_NAME",
         "port": "HOST_BILLINGSERVICE_PORT",
         "version": "HOST_VERSION",
         "reschedulefreqency": "BILLING_SCHEDULE_FREQUENCY",
-        "rescheduletries": "BILLING_SCHEDULE_TRIES"
+        "rescheduletries": "BILLING_SCHEDULE_TRIES",
+        "diameterDomain": "HOST_DIAMETERSERVER_NAME",
+        "diameterPort": "HOST_DIAMETERSERVER_PORT",
+		"tenantBilling" : "HOST_TENANTBILLING_ENABLED",
+        "userBilling" : "HOST_USERBILLING_ENABLED",
+        "TenantName": "HOST_TENANT_NAME"
+
+
     },
 
     "LBServer" : {
@@ -72,6 +80,10 @@ module.exports = {
 
         "walletServiceHost": "SYS_WALLETSERVICE_HOST",
         "walletServicePort":  "SYS_WALLETSERVICE_PORT",
-        "walletServiceVersion":  "SYS_WALLETSERVICE_VERSION"
+        "walletServiceVersion":  "SYS_WALLETSERVICE_VERSION",
+
+        "monitorRestApiHost": "SYS_MONITORRESTAPI_HOST",
+        "monitorRestApiPost":  "SYS_MONITORRESTAPI_PORT",
+        "monitorRestApiVersion":  "SYS_MONITORRESTAPI_VERSION"
     }
 };
