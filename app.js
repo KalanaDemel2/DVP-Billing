@@ -12,16 +12,16 @@ var host = config.Host.vdomain || 'localhost';
 
 var buyPackage = require("./billapi/functions/buypackage");
 var ratings = require("./billapi/functions/ratings");
+var validateToken = require("./billapi/functions/validatetoken");
 
 var billing = require("./Core/scheduler");
-var diameter = require("./Core/diameter");
 
 var server = restify.createServer({
   name: "DVP Billing Service"
 });
 
 process.on('uncaughtException',function(err){
-  logger.log("UNCAUGHT EXCEPTION")
+  logger.log("UNCAUGHT EXCEPTION");
   logger.log(err.stack);
 });
 
@@ -44,6 +44,8 @@ var token = format("Bearer {0}",config.Services.accessToken);
 
 server.post('/DVP/API/:version/Billing/BuyPackage',authorization({resource:"billing", action:"write"}), buyPackage.execute);
 server.post('/DVP/API/:version/Billing/updateRatings',authorization({resource:"billing", action:"write"}), ratings.updateRatings);
+server.post('/DVP/API/:version/Billing/validateToken',authorization({resource:"billing", action:"write"}), validateToken.validateToken);
+
 
 
 

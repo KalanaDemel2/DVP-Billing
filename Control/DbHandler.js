@@ -62,6 +62,32 @@ module.exports.UpdateCustomerBillRecord = function (customer, callback) {
     });
 };
 
+/*module.exports.UpdateCustomerBillToken = function (customer, callback) {
+    var datetime = new Date();
+
+    DbConn.CustomerBillRecord
+        .update(
+            {
+                BillToken: customer.billToken,
+                updatedAt:datetime,
+                Status:customer.status
+
+            }
+            ,
+            {
+                where: [{TenantId: customer.tenant}, {CompanyId: customer.company}]
+            }
+        ).then(function (cmp) {
+        var jsonString = messageFormatter.FormatMessage(undefined, "EXCEPTION", true, cmp);
+        logger.info('[CustomerUpdateBillToken] -  Billing - [%s] .', jsonString);
+        callback(null, jsonString);
+    }).error(function (err) {
+        var jsonString = messageFormatter.FormatMessage(undefined, "EXCEPTION", true, err);
+        logger.info('[CustomerUpdateBillToken] -  Billing - [%s] .', jsonString);
+        callback(err, jsonString);
+    });
+};*/
+
 module.exports.CustomerCycleById = function (customer, res) {
     var datetime = new Date();
     DbConn.CustomerBillRecord
@@ -75,7 +101,7 @@ module.exports.CustomerCycleById = function (customer, res) {
                 "Cycle": CustomerBillRecord.Cycle,
                 "FirstBilling" : CustomerBillRecord.FirstBilling,
                 "BuyDate" : CustomerBillRecord.BuyDate,
-                "OtherJsonData" : CustomerBillRecord.OtherJsonData
+                "OtherJsonData" : CustomerBillRecord.OtherJsonData,
             };
             jsonString = messageFormatter.FormatMessage(undefined, "EXCEPTION", true, data);
         }
