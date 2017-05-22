@@ -43,7 +43,7 @@ function billing(){
 
 
     //var billing = schedule.scheduleJob('1 0 '+config.Host.billingDate +' 1-12 *', function(){
-    var billing = schedule.scheduleJob('0 26 23 21 1-12 *', function(){
+    var billing = schedule.scheduleJob('0 41 23 21 1-12 *', function(){
         console.log('billing is running...');
         bill(1);
     });
@@ -254,7 +254,7 @@ function billEach(datax){
             // : Organization Bill Need All tenant details, One email for the entire Organization
             // : Send to SuperUser Email
 
-            if(config.Host.userBilling){
+            if(config.Host.userBilling == true || config.Host.userBilling== "true" ){
 
                 //console.log('Executing User Billing ')
 
@@ -522,8 +522,8 @@ function billEach(datax){
                                 //console.log('Billing Unsuccessful, rescheduling billing');
                                 var data= {};
                                 data.count = 0;
-                                data.company = "596";
-                                data.tenant = "1";
+                                data.company = relCompany;
+                                data.tenant = relTenant;
                                 data.amount = amount;
                                 data.email = email;
                                 data.formattedPackgeDetatils = formattedPackgeDetatils;
@@ -687,7 +687,7 @@ function billEach(datax){
 
 
 
-                                                console.log(packageDetails);
+                                                //console.log(packageDetails);
 
                                                 sendObj.to =  email;
                                                 //sendObj.to =  "kalana@duosoftware.com";
@@ -943,13 +943,13 @@ function recurrenceSchedulePaymentTenant(data){
 //Make 24 hour recurring requests to pay the bill till a designated time limit and the disable account
 function recurrenceSchedulePayment(data){
 
-    var relCompany = data.company;
-    var relTenant = data.tenant;
+    var relCompany = "596";
+    var relTenant = "1";
     var amount = data.amount;
     logger.info('[RESCHEDULE]: '+relTenant+':'+relCompany);
     var rule = new schedule.RecurrenceRule();
-    //rule.hour = (config.Host.reschedulefreqency*24)/config.Host.rescheduletries;
-    rule.second = 1;
+    rule.hour = (config.Host.reschedulefreqency*24)/config.Host.rescheduletries;
+    //rule.second = 1;
     var count;
     if(data.hasOwnProperty('count')){
         count = data.count;
