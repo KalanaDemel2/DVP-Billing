@@ -43,7 +43,7 @@ function billing(){
 
 
     //var billing = schedule.scheduleJob('1 0 '+config.Host.billingDate +' 1-12 *', function(){
-    var billing = schedule.scheduleJob('0 50 8 22 1-12 *', function(){
+    var billing = schedule.scheduleJob('0 26 23 21 1-12 *', function(){
         console.log('billing is running...');
         bill(1);
     });
