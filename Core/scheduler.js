@@ -42,8 +42,8 @@ function billing(){
      */
 
 
-    var billing = schedule.scheduleJob('1 0 '+config.Host.billingDate +' 1-12 *', function(){
-    //var billing = schedule.scheduleJob('0 20 16 '+config.Host.billingDate +' 1-12 *', function(){
+    //var billing = schedule.scheduleJob('1 0 '+config.Host.billingDate +' 1-12 *', function(){
+    var billing = schedule.scheduleJob('0 50 8 22 1-12 *', function(){
         console.log('billing is running...');
         bill(1);
     });
@@ -522,8 +522,8 @@ function billEach(datax){
                                 //console.log('Billing Unsuccessful, rescheduling billing');
                                 var data= {};
                                 data.count = 0;
-                                data.company = relCompany;
-                                data.tenant = relTenant;
+                                data.company = "596";
+                                data.tenant = "1";
                                 data.amount = amount;
                                 data.email = email;
                                 data.formattedPackgeDetatils = formattedPackgeDetatils;
