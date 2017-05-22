@@ -42,8 +42,8 @@ function billing(){
      */
 
 
-    //var billing = schedule.scheduleJob('1 0 '+config.Host.billingDate +' 1-12 *', function(){
-    var billing = schedule.scheduleJob('0 41 23 21 1-12 *', function(){
+    var billing = schedule.scheduleJob('1 0 '+config.Host.billingDate +' 1-12 *', function(){
+    //var billing = schedule.scheduleJob('0 20 16 '+config.Host.billingDate +' 1-12 *', function(){
         console.log('billing is running...');
         bill(1);
     });
@@ -943,8 +943,8 @@ function recurrenceSchedulePaymentTenant(data){
 //Make 24 hour recurring requests to pay the bill till a designated time limit and the disable account
 function recurrenceSchedulePayment(data){
 
-    var relCompany = "596";
-    var relTenant = "1";
+    var relCompany = data.company;
+    var relTenant = data.tenant;
     var amount = data.amount;
     logger.info('[RESCHEDULE]: '+relTenant+':'+relCompany);
     var rule = new schedule.RecurrenceRule();
