@@ -43,7 +43,7 @@ function billing(){
 
 
     var billing = schedule.scheduleJob('1 0 '+config.Host.billingDate +' 1-12 *', function(){
-    //var billing = schedule.scheduleJob('30 36 10 22 1-12 *', function(){
+    //var billing = schedule.scheduleJob('50 20 11 22 1-12 *', function(){
         console.log('billing is running...');
         bill(1);
     });
@@ -924,13 +924,12 @@ function recurrenceSchedulePaymentTenant(data){
                 /*var key2 = config.Host.TenantName + "_BILL_HASH_TOKEN";
                 redisTokenValidation.del(key2);*/
                 logger.info('[DEACTIVATION] Disabling account for :'+relTenant+':'+relCompany);
+                setBilled(false);
                 task.cancel();
             }
             else{
                 console.log('TenantBilled...');
             }
-
-
 
 
 
