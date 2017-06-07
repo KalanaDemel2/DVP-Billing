@@ -23,7 +23,7 @@ function validateToken(data, response){
         if(data.billToken == token ){
             scheduler.setBilled(true);
             console.log('Valid Bill Token');
-            jsonString = messageFormatter.FormatMessage(undefined, 'Bill Token Valid', true);
+            jsonString = messageFormatter.FormatMessage(undefined, 'Subscription has been renewed successfully', true);
             response(jsonString);
         }
         else{
