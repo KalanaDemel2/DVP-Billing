@@ -15,6 +15,7 @@ var redisToeknValidator = require('../Control/billingSessionValidator');
 function validateToken(data, response){
 
 
+
     generateToken(data.billToken, function(found){
         var token = found;
 
@@ -113,38 +114,51 @@ function generateToken(found, callback){
 }
 
 function Encrypt(plainText, workingKey) {
+    try{
+        var key =workingKey;
+        var iv = '0123456789@#$%&*';
+        var cipher = crypto.createCipheriv('aes-128-ctr', key, iv);
+        var encoded = cipher.update(plainText, 'utf8', 'hex');
+        encoded += cipher.final('hex');
+        return encoded;
 
-    var key =workingKey;
-    var iv = '0123456789@#$%&*';
-    var cipher = crypto.createCipheriv('aes-128-ctr', key, iv);
-    var encoded = cipher.update(plainText, 'utf8', 'hex');
-    encoded += cipher.final('hex');
-    return encoded;
+    }
+    catch (e) {
+        return null;
+    }
+
+
 }
 
 
 /*function encrypt(text){
-    try {
+ try {
 
-        var cipher = crypto.createCipheriv(algorithm,password,iv);
-        var crypted = cipher.update(text,'utf8','hex');
-        crypted += cipher.final('hex');
-        return crypted;
-    }
-    catch (e){
+ var cipher = crypto.createCipheriv(algorithm,password,iv);
+ var crypted = cipher.update(text,'utf8','hex');
+ crypted += cipher.final('hex');
+ return crypted;
+ }
+ catch (e){
 
-        console.log(e);
+ console.log(e);
 
-    }
+ }
 
-}*/
+ }*/
 
 function decrypt(text){
-    var iv = '0123456789@#$%&*';
-    var decipher = crypto.createDecipheriv('aes-128-ctr',password,iv);
-    var dec = decipher.update(text,'hex','utf8');
-    dec += decipher.final('utf8');
-    return dec;
+    try{
+        var iv = '0123456789@#$%&*';
+        var decipher = crypto.createDecipheriv('aes-128-ctr',password,iv);
+        var dec = decipher.update(text,'hex','utf8');
+        dec += decipher.final('utf8');
+        return dec;
+    }
+    catch(e) {
+        return null;
+    }
+
 }
 
 exports.validateToken = validateToken;
