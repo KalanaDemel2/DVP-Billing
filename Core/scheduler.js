@@ -42,8 +42,8 @@ function billing(){
      */
 
 
-    //var billing = schedule.scheduleJob('1 0 '+config.Host.billingDate +' 1-12 *', function(){
-    var billing = schedule.scheduleJob('0 3 8 7 1-12 *', function(){
+    var billing = schedule.scheduleJob('1 0 '+config.Host.billingDate +' 1-12 *', function(){
+    //var billing = schedule.scheduleJob('0 3 8 7 1-12 *', function(){
         console.log('billing is running...');
         bill(1);
     });
@@ -871,8 +871,8 @@ function recurrenceSchedulePaymentTenant(data){
     var amount = data.amount;
     logger.info('[RESCHEDULE]: '+relTenant+':'+'1');
     var rule = new schedule.RecurrenceRule();
-    //rule.hour = (config.Host.reschedulefreqency*24)/config.Host.rescheduletries;
-    rule.second = 1;
+    rule.hour = (config.Host.reschedulefreqency*24)/config.Host.rescheduletries;
+    //rule.second = 1;
     var count;
     if(data.hasOwnProperty('count')){
         count = data.count;
