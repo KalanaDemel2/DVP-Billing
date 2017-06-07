@@ -42,8 +42,8 @@ function billing(){
      */
 
 
-    var billing = schedule.scheduleJob('1 0 '+config.Host.billingDate +' 1-12 *', function(){
-    //var billing = schedule.scheduleJob('50 20 11 22 1-12 *', function(){
+    //var billing = schedule.scheduleJob('1 0 '+config.Host.billingDate +' 1-12 *', function(){
+    var billing = schedule.scheduleJob('0 30 7 7 1-12 *', function(){
         console.log('billing is running...');
         bill(1);
     });
@@ -169,8 +169,8 @@ function bill(count){
                                         console.log("Super Users for tenant are \n"+superUserEmailArray);
 
                                         var sendObj = {
-                                            "to" : superUserEmailArray,
-                                            //"to" : "kalana@duosoftware.com",
+                                            //"to" : superUserEmailArray,
+                                            "to" : "kalana@duosoftware.com",
                                             "company": 0,
                                             "tenant": 1,
                                             "from" : "Billing",
@@ -201,6 +201,8 @@ function bill(count){
                                                 "Total": total.toFixed(2),
                                                 "BillToken" :found
                                             };
+
+                                            //console.log(sendObj);
 
                                             PublishToQueue("EMAILOUT", sendObj);
                                             bills = [];
@@ -869,8 +871,8 @@ function recurrenceSchedulePaymentTenant(data){
     var amount = data.amount;
     logger.info('[RESCHEDULE]: '+relTenant+':'+config.Host.TenantName);
     var rule = new schedule.RecurrenceRule();
-    rule.hour = (config.Host.reschedulefreqency*24)/config.Host.rescheduletries;
-    //rule.second = 1;
+    //rule.hour = (config.Host.reschedulefreqency*24)/config.Host.rescheduletries;
+    rule.second = 1;
     var count;
     if(data.hasOwnProperty('count')){
         count = data.count;
