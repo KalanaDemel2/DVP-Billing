@@ -22,6 +22,7 @@ function validateToken(req,res,next){
         if(JSON.parse(found).IsSuccess){
             redisTokenValidation.save(key,customer.billToken );
         }
+        res.end();
     });
 
 }

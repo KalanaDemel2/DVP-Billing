@@ -22,12 +22,12 @@ function validateToken(data, response){
         if(data.billToken == token ){
             scheduler.setBilled(true);
             console.log('Valid Bill Token');
-            jsonString = messageFormatter.FormatMessage(undefined, 'EXCEPTION', true);
+            jsonString = messageFormatter.FormatMessage(undefined, 'Bill Token Valid', true);
             response(jsonString);
         }
         else{
             console.log('Invalid Bill Token');
-            jsonString = messageFormatter.FormatMessage(undefined, 'EXCEPTION', false);
+            jsonString = messageFormatter.FormatMessage({message : "ERROR : INVALID TOKEN"}, 'Invalid Bill Token', false);
             response(jsonString);
         }
     });
