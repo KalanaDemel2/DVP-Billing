@@ -20,8 +20,11 @@ client.auth(redisPassword, function (redisResp) {
 function validateToken(response){
 
 
-    var key = Config.Host.TenantName + "_BILL_TOKEN";
-    var key2 = Config.Host.TenantName + "_BILL_HASH_TOKEN";
+    //var key = Config.Host.TenantName + "_BILL_TOKEN";
+    //var key2 = Config.Host.TenantName + "_BILL_HASH_TOKEN";
+
+    var key = "1_BILL_TOKEN";
+    var key2 = "1_BILL_HASH_TOKEN";
 
     get(key, function(err, found1){
 

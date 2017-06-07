@@ -14,7 +14,7 @@ function validateToken(req,res,next){
     customer.customer = (req.user.company).toString();
     customer.billToken = req.body.billToken;
 
-    var key = config.Host.TenantName + "_BILL_TOKEN";
+    var key = "1_BILL_TOKEN";
 
 
     tokenGenerator.validateToken(customer, function(found){
