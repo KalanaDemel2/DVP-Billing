@@ -53,14 +53,17 @@ module.exports = {
         "domain": "HOST_NAME",
         "port": "HOST_BILLINGSERVICE_PORT",
         "version": "HOST_VERSION",
+        "billingDate": "BILLING_DATE",
         "reschedulefreqency": "BILLING_SCHEDULE_FREQUENCY",
         "rescheduletries": "BILLING_SCHEDULE_TRIES",
+        "EmailWarningActDay": "BILLING_EMAIL_WARNING_ACTIVATION",
+        "SmsWarningActDay": "BILLING_SMS_WARNING_ACTIVATION",
+        "CallWarningActDay": "BILLING_CALL_WARNING_ACTIVATION",
         "diameterDomain": "HOST_DIAMETERSERVER_NAME",
         "diameterPort": "HOST_DIAMETERSERVER_PORT",
-		"tenantBilling" : "HOST_TENANTBILLING_ENABLED",
+        "tenantBilling" : "HOST_TENANTBILLING_ENABLED",
         "userBilling" : "HOST_USERBILLING_ENABLED",
         "TenantName": "HOST_TENANT_NAME"
-
 
     },
 
