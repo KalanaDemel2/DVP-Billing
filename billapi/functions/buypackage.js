@@ -49,20 +49,20 @@ function execute(req,res,next){
 
 
         var remaining_days = 30-day;
-        var email = req.body.userInfo.email.contact;
-        var packgedetails = req.body.userInfo;
+        var email = req.body.email.contact;
+        var packgedetails = req.body;
         packgedetails.id = tenant+"."+company+"."+month+"."+year;
         //console.log(req.body);
         console.log(req.headers.authorization);
 
         var amount = 0;
-        if(req.body.userInfo.setupFee)
-            amount = (((req.body.userInfo.unitPrice) * (req.body.userInfo.units) * remaining_days)/30)+req.body.userInfo.setupFee;
+        if(req.body.setupFee)
+            amount = (((req.body.unitPrice) * (req.body.units) * remaining_days)/30)+req.body.setupFee;
         else
-            amount = ((req.body.userInfo.unitPrice) * (req.body.userInfo.units) * remaining_days)/30;
+            amount = ((req.body.unitPrice) * (req.body.units) * remaining_days)/30;
 
-        console.log(req.body.userInfo.unitPrice);
-        console.log(req.body.userInfo.units);
+        console.log(req.body.unitPrice);
+        console.log(req.body.units);
         console.log(remaining_days);
 
         amount = amount*100;
@@ -76,7 +76,7 @@ function execute(req,res,next){
                 Authorization: req.headers.authorization,
                 companyinfo: format("{0}:{1}", tenant , company)
             },
-            json: {"Amount": amount, "Reason": req.body.userInfo.name+':'+req.body.userInfo.type, "name":req.body.userInfo.username}
+            json: {"Amount": amount, "Reason": req.body.name+':'+req.body.type, "name":req.body.username}
         }, function (_error, _response, datax) {
             console.log(datax);
             if (datax && datax.IsSuccess) {
@@ -87,7 +87,7 @@ function execute(req,res,next){
                 //Save to Database
                 var customer = {};
                 customer.customer = company;
-                customer.email = req.body.userInfo.email.contact;
+                customer.email = req.body.email.contact;
                 customer.status = true;
                 customer.subscriptions = JSON.stringify(packgedetails);
                 customer.tenant = tenant;
@@ -250,13 +250,13 @@ function execute(req,res,next){
         if(remaining_days ==-1 || remaining_days ==0){
             remaining_days = 1;
         }
-        var email = req.body.userInfo.email.contact;
-        var packgedetails = req.body.userInfo;
+        var email = req.body.email.contact;
+        var packgedetails = req.body;
         packgedetails.id = tenant+"."+company+"."+month+"."+year;
-        //console.log(req.body.userInfo);
-        console.log(req.body.userInfo.unitPrice);
-        console.log(req.body.userInfo.units);
-        console.log(req.body.userInfo.setupFee);
+        //console.log(req.body);
+        console.log(req.body.unitPrice);
+        console.log(req.body.units);
+        console.log(req.body.setupFee);
 
 
         var date = new Date();
