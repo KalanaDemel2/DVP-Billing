@@ -49,8 +49,8 @@ function execute(req,res,next){
 
 
         var remaining_days = 30-day;
-        var email = req.body.email;
-        var packgedetails = req.body;
+        var email = req.body.userInfo.email;
+        var packgedetails = req.body.userInfo;
         packgedetails.id = tenant+"."+company+"."+month+"."+year;
         //console.log(req.body);
         console.log(req.headers.authorization);
@@ -63,7 +63,7 @@ function execute(req,res,next){
 
         console.log(req.body.userInfo.unitPrice);
         console.log(req.body.userInfo.units);
-        console.log(req.body.userInfo.remaining_days);
+        console.log(remaining_days);
 
         amount = amount*100;
 
@@ -76,9 +76,9 @@ function execute(req,res,next){
                 Authorization: req.headers.authorization,
                 companyinfo: format("{0}:{1}", tenant , company)
             },
-            json: {"Amount": amount, "Reason": req.body.name+':'+req.body.type, "name":req.body.userInfo.username}
+            json: {"Amount": amount, "Reason": req.body.userInfo.name+':'+req.body.userInfo.type, "name":req.body.userInfo.username}
         }, function (_error, _response, datax) {
-            //console.log(datax);
+            console.log(datax);
             if (datax && datax.IsSuccess) {
 
                 var date = new Date();
@@ -250,13 +250,13 @@ function execute(req,res,next){
         if(remaining_days ==-1 || remaining_days ==0){
             remaining_days = 1;
         }
-        var email = req.body.email;
-        var packgedetails = req.body;
+        var email = req.body.userInfo.email;
+        var packgedetails = req.body.userInfo;
         packgedetails.id = tenant+"."+company+"."+month+"."+year;
-        //console.log(req.body);
-        console.log(req.body.unitPrice);
-        console.log(req.body.units);
-        console.log(req.body.setupFee);
+        //console.log(req.body.userInfo);
+        console.log(req.body.userInfo.unitPrice);
+        console.log(req.body.userInfo.units);
+        console.log(req.body.userInfo.setupFee);
 
 
         var date = new Date();
