@@ -49,7 +49,7 @@ function execute(req,res,next){
 
 
         var remaining_days = 30-day;
-        var email = req.body.email.contact;
+        var email = req.body.email;
         var packgedetails = req.body;
         packgedetails.id = tenant+"."+company+"."+month+"."+year;
         //console.log(req.body);
@@ -87,7 +87,7 @@ function execute(req,res,next){
                 //Save to Database
                 var customer = {};
                 customer.customer = company;
-                customer.email = req.body.email.contact;
+                customer.email = req.body.email;
                 customer.status = true;
                 customer.subscriptions = JSON.stringify(packgedetails);
                 customer.tenant = tenant;
@@ -250,7 +250,7 @@ function execute(req,res,next){
         if(remaining_days ==-1 || remaining_days ==0){
             remaining_days = 1;
         }
-        var email = req.body.email.contact;
+        var email = req.body.email;
         var packgedetails = req.body;
         packgedetails.id = tenant+"."+company+"."+month+"."+year;
         //console.log(req.body);
