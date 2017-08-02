@@ -56,14 +56,14 @@ function execute(req,res,next){
         console.log(req.headers.authorization);
 
         var amount = 0;
-        if(req.body.setupFee)
-            amount = (((req.body.unitPrice) * (req.body.units) * remaining_days)/30)+req.body.setupFee;
+        if(req.body.userInfo.setupFee)
+            amount = (((req.body.userInfo.unitPrice) * (req.body.userInfo.units) * remaining_days)/30)+req.body.userInfo.setupFee;
         else
-            amount = ((req.body.unitPrice) * (req.body.units) * remaining_days)/30;
+            amount = ((req.body.userInfo.unitPrice) * (req.body.userInfo.units) * remaining_days)/30;
 
-        console.log(req.body.unitPrice);
-        console.log(req.body.units);
-        console.log(req.body.remaining_days);
+        console.log(req.body.userInfo.unitPrice);
+        console.log(req.body.userInfo.units);
+        console.log(req.body.userInfo.remaining_days);
 
         amount = amount*100;
 
