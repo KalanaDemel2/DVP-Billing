@@ -61,6 +61,10 @@ function execute(req,res,next){
         else
             amount = ((req.body.unitPrice) * (req.body.units) * remaining_days)/30;
 
+        console.log(req.body.unitPrice);
+        console.log(req.body.units);
+        console.log(req.body.remaining_days);
+
         amount = amount*100;
 
         logger.info('[BUY PACKAGE]:Amount to be deducted - %s ', amount);
