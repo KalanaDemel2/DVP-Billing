@@ -78,7 +78,7 @@ function execute(req,res,next){
             },
             json: {"Amount": amount, "Reason": req.body.name+':'+req.body.type, "name":req.body.username}
         }, function (_error, _response, datax) {
-            console.log(datax);
+            //console.log(datax);
             if (datax && datax.IsSuccess) {
 
                 var date = new Date();
