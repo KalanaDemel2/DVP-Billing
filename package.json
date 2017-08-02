@@ -27,6 +27,7 @@
     "q": "^1.4.1",
     "rand-token": "^0.3.0",
     "redis-lock": "^0.1.0",
+    "redlock": "^3.0.0",
     "request": "^2.78.0",
     "restify": "^4.3.0",
     "restify-jwt": "^0.4.0",

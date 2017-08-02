@@ -30,7 +30,7 @@ function execute(req,res,next){
     //var company ='103';
     var tenant = req.user.tenant;
 
-    console.log(company);
+    console.log(req.body);
 
     if(config.Host.userBilling){
         var walletURL = format("http://{0}/DVP/API/{1}/PaymentManager/Customer/Wallet/Credit",  config.Services.walletServiceHost,  config.Services.walletServiceVersion);
@@ -49,7 +49,7 @@ function execute(req,res,next){
 
 
         var remaining_days = 30-day;
-        var email = req.body.userInfo.email;
+        var email = req.body.userInfo.email.contact;
         var packgedetails = req.body.userInfo;
         packgedetails.id = tenant+"."+company+"."+month+"."+year;
         //console.log(req.body);
@@ -87,7 +87,7 @@ function execute(req,res,next){
                 //Save to Database
                 var customer = {};
                 customer.customer = company;
-                customer.email = email;
+                customer.email = req.body.userInfo.email.contact;
                 customer.status = true;
                 customer.subscriptions = JSON.stringify(packgedetails);
                 customer.tenant = tenant;
@@ -250,7 +250,7 @@ function execute(req,res,next){
         if(remaining_days ==-1 || remaining_days ==0){
             remaining_days = 1;
         }
-        var email = req.body.userInfo.email;
+        var email = req.body.userInfo.email.contact;
         var packgedetails = req.body.userInfo;
         packgedetails.id = tenant+"."+company+"."+month+"."+year;
         //console.log(req.body.userInfo);
