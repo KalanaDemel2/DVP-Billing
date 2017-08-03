@@ -30,7 +30,7 @@ function execute(req,res,next){
     //var company ='103';
     var tenant = req.user.tenant;
 
-    console.log(company);
+    console.log(req.body);
 
     if(config.Host.userBilling){
         var walletURL = format("http://{0}/DVP/API/{1}/PaymentManager/Customer/Wallet/Credit",  config.Services.walletServiceHost,  config.Services.walletServiceVersion);
@@ -61,6 +61,10 @@ function execute(req,res,next){
         else
             amount = ((req.body.unitPrice) * (req.body.units) * remaining_days)/30;
 
+        console.log(req.body.unitPrice);
+        console.log(req.body.units);
+        console.log(remaining_days);
+
         amount = amount*100;
 
         logger.info('[BUY PACKAGE]:Amount to be deducted - %s ', amount);
@@ -72,7 +76,7 @@ function execute(req,res,next){
                 Authorization: req.headers.authorization,
                 companyinfo: format("{0}:{1}", tenant , company)
             },
-            json: {"Amount": amount, "Reason": req.body.name+':'+req.body.type, "name":req.body.userInfo.username}
+            json: {"Amount": amount, "Reason": req.body.name+':'+req.body.type, "name":req.body.username}
         }, function (_error, _response, datax) {
             //console.log(datax);
             if (datax && datax.IsSuccess) {
@@ -83,7 +87,7 @@ function execute(req,res,next){
                 //Save to Database
                 var customer = {};
                 customer.customer = company;
-                customer.email = email;
+                customer.email = req.body.email;
                 customer.status = true;
                 customer.subscriptions = JSON.stringify(packgedetails);
                 customer.tenant = tenant;

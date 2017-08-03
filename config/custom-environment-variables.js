@@ -9,7 +9,7 @@ module.exports = {
     },
 
 
-     "Redis":
+    "Redis":
     {
         "mode":"SYS_REDIS_MODE",
         "ip": "SYS_REDIS_HOST",
@@ -26,7 +26,6 @@ module.exports = {
 
     "Security":
     {
-
         "ip": "SYS_REDIS_HOST",
         "port": "SYS_REDIS_PORT",
         "user": "SYS_REDIS_USER",
