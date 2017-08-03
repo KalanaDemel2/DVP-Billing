@@ -5,35 +5,114 @@
 var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJsonFormatter.js');
 var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 var DbConn = require('dvp-dbmodels');
-var moment = require('moment');
-var Sequelize = require('sequelize');
-var redis = require('redis');
-var async = require("async");
+var redis = require('ioredis');
 var config = require('config');
-//var directPayment = require('../Stripe/DirectPayment');
 var Q = require('q');
+var Redlock = require('redlock');
 
-var client = redis.createClient(config.Redis.port, config.Redis.ip);
-client.auth(config.Redis.password);
-client.select(config.Redis.redisdb, redis.print);
-//client.select(config.Redis.redisdb, function () {});
-client.on("error", function (err) {
-    logger.error('error', 'Redis connection error :: %s', err);
-    console.log("Error " + err);
-});
-
-client.on("connect", function (err) {
-    client.select(config.Redis.redisdb, redis.print);
-});
-var lock = require("redis-lock")(client);
 var ttl = config.Redis.ttl;
+
+var redisip = config.Redis.ip;
+var redisport = config.Redis.port;
+var redispass = config.Redis.password;
+var redismode = config.Redis.mode;
+var redisdb = config.Redis.db;
+
+var redisSetting =  {
+    port:redisport,
+    host:redisip,
+    family: 4,
+    password: redispass,
+    db: redisdb,
+    retryStrategy: function (times) {
+        var delay = Math.min(times * 50, 2000);
+        return delay;
+    },
+    reconnectOnError: function (err) {
+
+        return true;
+    }
+};
+
+
+if(redismode == 'sentinel'){
+
+    if(config.Redis.sentinels && config.Redis.sentinels.hosts && config.Redis.sentinels.port, config.Redis.sentinels.name){
+        var sentinelHosts = config.Redis.sentinels.hosts.split(',');
+        if(Array.isArray(sentinelHosts) && sentinelHosts.length > 2){
+            var sentinelConnections = [];
+
+            sentinelHosts.forEach(function(item){
+
+                sentinelConnections.push({host: item, port:config.Redis.sentinels.port})
+
+            });
+
+            redisSetting = {
+                sentinels:sentinelConnections,
+                name: config.Redis.sentinels.name,
+                password: redispass,
+                db: redisdb
+            }
+
+        }else{
+
+            console.log("No enough sentinel servers found .........");
+        }
+
+    }
+}
+
+var client = undefined;
+
+if(redismode != "cluster") {
+    client = new redis(redisSetting);
+}else{
+
+    var redisHosts = redisip.split(",");
+    if(Array.isArray(redisHosts)){
+
+
+        redisSetting = [];
+        redisHosts.forEach(function(item){
+            redisSetting.push({
+                host: item,
+                port: redisport,
+                family: 4,
+                password: redispass,
+                db: redisdb});
+        });
+
+        client = new redis.Cluster([redisSetting]);
+
+    }else{
+
+        client = new redis(redisSetting);
+    }
+
+
+}
+
+
+
+var redlock = new Redlock(
+    [client],
+    {
+        driftFactor: 0.01,
+
+        retryCount:  10000,
+
+        retryDelay:  200
+
+    }
+);
 
 var buyCredit = function (walletId, amount, user) {
 
     var deferred = Q.defer();
 
     if (walletId) {
-        lock(walletId, ttl, function (done) {
+        redlock.lock('lock:'+walletId, ttl, function (done) {
             console.log("Lock acquired" + walletId);
 
             DbConn.Wallet.find({
@@ -111,7 +190,7 @@ var deductCredit = function (req, wallet, credit, amount) {
 
     var deferred = Q.defer();
 
-    lock(wallet.WalletId, ttl, function (done) {
+    redlock.lock('lock:'+wallet.WalletId, ttl, function (done) {
         if (wallet) {
             if (credit > amount) {
                 credit = credit - amount;
@@ -1134,7 +1213,7 @@ var LockCredit = function (sessionId,amount, invokeBy, reason, tenant, company) 
             return;
         }
         if (wallet) {
-            lock(sessionId, ttl, function (done) {
+            redlock.lock('lock:'+sessionId, ttl, function (done) {
                 var credit = parseFloat(wallet.Credit);
                 var lockCredit = parseFloat(wallet.LockCredit);
                 if (credit > amount) {

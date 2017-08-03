@@ -42,16 +42,51 @@ function billing(){
      */
 
 
-    var billing = schedule.scheduleJob('1 0 '+config.Host.billingDate +' 1-12 *', function(){
-    //var billing = schedule.scheduleJob('0 3 8 7 1-12 *', function(){
-        console.log('billing is running...');
-        bill(1);
+    redisTokenValidation.get('TENANT_BILLED_STATUS',function(err, status){
+
+        var billing;
+        if(status==false){
+            bill(1);
+            billing = schedule.scheduleJob('1 0 '+config.Host.billingDate +' 1-12 *', function(){
+                //var billing = schedule.scheduleJob('0 3 8 7 1-12 *', function(){
+                console.log('billing is running...');
+                bill(1);
+            });
+        }
+        else if(status==true){
+            billing = schedule.scheduleJob('1 0 '+config.Host.billingDate +' 1-12 *', function(){
+                //var billing = schedule.scheduleJob('0 3 8 7 1-12 *', function(){
+                console.log('billing is running...');
+                bill(1);
+            });
+        }
+        else if (status = null){
+            billing = schedule.scheduleJob('1 0 '+config.Host.billingDate +' 1-12 *', function(){
+                //var billing = schedule.scheduleJob('0 3 8 7 1-12 *', function(){
+                console.log('billing is running...');
+                bill(1);
+            });
+        }
+        else if (err){
+            console.log('Redis Error...');
+            billing = schedule.scheduleJob('1 0 '+config.Host.billingDate +' 1-12 *', function(){
+                //var billing = schedule.scheduleJob('0 3 8 7 1-12 *', function(){
+                console.log('billing is running...');
+                bill(1);
+            });
+        }
+
+
     });
+
+
 
 }
 
 
 function bill(count){
+
+    redisTokenValidation.save('TENANT_BILLED_STATUS', false, function(){});
     var company ='0';
     var tenant = '1';
 
@@ -205,6 +240,8 @@ function bill(count){
                                             //console.log(sendObj);
 
                                             PublishToQueue("EMAILOUT", sendObj);
+                                            redisTokenValidation.save('TENANT_BILLED_STATUS', true, function(){});
+
                                             bills = [];
                                             tenantBilled = false;
                                             recurrenceSchedulePaymentTenant(sendObj);
