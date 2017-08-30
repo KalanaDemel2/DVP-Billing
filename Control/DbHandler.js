@@ -109,11 +109,11 @@ module.exports.CustomerCycleById = function (customer, res) {
             jsonString = messageFormatter.FormatMessage(undefined, "EXCEPTION", false, 0);
         }
 
-        logger.info('[CustomerCycleById] -  Billing - [%s] .', jsonString);
+        //logger.info('[CustomerCycleById] -  Billing - [%s] .', jsonString);
         res(null,jsonString);
     }).error(function (err) {
         var jsonString = messageFormatter.FormatMessage(err, "EXCEPTION", false, undefined);
-        logger.error('[CustomerCycleById] - [%s] ', jsonString);
+        //logger.error('[CustomerCycleById] - [%s] ', jsonString);
         res(err,jsonString);
     });
 };
