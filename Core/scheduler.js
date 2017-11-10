@@ -46,8 +46,6 @@ function billing(){
 
         var billing;
         console.log('Billed For month :'+status);
-
-
         if(status == 'false'|| status == false){
             bill(1);
             billing = schedule.scheduleJob('1 0 '+config.Host.billingDate +' 1-12 *', function(){
@@ -63,7 +61,7 @@ function billing(){
                 bill(1);
             });
         }
-        else if (status == ""){
+        else if (status == null){
             billing = schedule.scheduleJob('1 0 '+config.Host.billingDate +' 1-12 *', function(){
             //billing = schedule.scheduleJob('10 18 11 31 1-12 *', function(){
                 console.log('billing is running...');
@@ -88,7 +86,6 @@ function billing(){
 
 
 function bill(count){
-
 
     redisTokenValidation.save('TENANT_BILLED_STATUS', false, function(){});
     var company ='0';
