@@ -243,6 +243,7 @@ function bill(count){
                                                 "BillToken" :found
                                             };
 
+                                            console.log("Sending to mail queue...");
                                             console.log(sendObj);
 
                                             PublishToQueue("EMAILOUT", sendObj);
@@ -250,6 +251,8 @@ function bill(count){
 
                                             bills = [];
                                             tenantBilled = false;
+
+                                            console.log(sendObj);
                                             recurrenceSchedulePaymentTenant(sendObj);
                                         })
 
