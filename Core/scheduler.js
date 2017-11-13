@@ -211,7 +211,8 @@ function bill(count){
 
                                         var sendObj = {
                                             //"to" : superUserEmailArray,
-                                            "to" : "kalana@duosoftware.com",
+                                            //"to" : "kalana@duosoftware.com",
+                                            "to" : "vmkdemel@gmail.com",
                                             "company": 0,
                                             "tenant": 1,
                                             "from" : "Billing",
