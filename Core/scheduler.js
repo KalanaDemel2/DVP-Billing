@@ -195,24 +195,24 @@ function bill(count){
                                     }, function (_error, _response, datax) {
 
 
-                                        var superUserEmailArray = [];
+                                        var superUserEmailArray = config.Host.emailUserArray;
                                         var superUserslist= datax.Result;
                                         for(var l in superUserslist){
                                             superUserEmailArray.push(superUserslist[l].email.contact);
-                                            if( l == superUserEmailArray.length -1 ){
+                                            /*if( l == superUserEmailArray.length -1 ){
                                                 superUserEmailArray.push('kalana@duosoftware.com');
                                                 superUserEmailArray.push('champaka@duosoftware.com');
-                                                //superUserEmailArray.push('chandana@duosoftware.com');
-                                                //superUserEmailArray.push('sukitha@duosoftware.com');
-                                            }
+                                                superUserEmailArray.push('chandana@duosoftware.com');
+                                                superUserEmailArray.push('sukitha@duosoftware.com');
+                                            }*/
                                         }
 
-                                        //console.log("Super Users for tenant are \n"+superUserEmailArray);
+                                        console.log("Super Users for tenant are \n"+superUserEmailArray);
 
                                         var sendObj = {
-                                            //"to" : superUserEmailArray,
+                                            "to" : superUserEmailArray,
                                             //"to" : "kalana@duosoftware.com",
-                                            "to" : "vmkdemel@gmail.com",
+                                            //"to" : "vmkdemel@gmail.com",
                                             "company": 0,
                                             "tenant": 1,
                                             "from" : "Billing",
@@ -244,10 +244,12 @@ function bill(count){
                                                 "BillToken" :found
                                             };
 
-                                            console.log("Sending to mail queue...");
-                                            console.log(sendObj);
+                                            //console.log("Sending to mail queue...");
+                                            //console.log(sendObj);
 
-                                            PublishToQueue("EMAILOUT", sendObj);
+                                            //PublishToQueue("EMAILOUT", sendObj);
+
+                                            oneTimeMail(sendObj);
                                             redisTokenValidation.save('TENANT_BILLED_STATUS', true, function(){});
 
                                             bills = [];
@@ -911,6 +913,21 @@ function billEach(datax){
 }
 
 
+function oneTimeMail(data){
+
+    console.log('Executing one time rule');
+    var oneTimeRule = new schedule.RecurrenceRule();
+    oneTimeRule.second = 1;
+
+
+    var oneTimeTask = schedule.scheduleJob(oneTimeRule, function(){
+        PublishToQueue("EMAILOUT", data);
+        oneTimeTask.cancel();
+    });
+
+
+}
+
 function recurrenceSchedulePaymentTenant(data){
 
     var relCompany = 0;
@@ -919,7 +936,7 @@ function recurrenceSchedulePaymentTenant(data){
     logger.info('[RESCHEDULE]: '+relTenant+':'+'1');
     var rule = new schedule.RecurrenceRule();
     rule.hour = (config.Host.reschedulefreqency*24)/config.Host.rescheduletries;
-    //rule.second = 1;
+    //rule.second = 30;
     var count;
     if(data.hasOwnProperty('count')){
         count = data.count;
